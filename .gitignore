@@ -1,44 +1,42 @@
-# ===== Quartus / Intel FPGA =====
-db/
-incremental_db/
-output_files/
-qdb/
-*.qws
-*.qpf
-*.qsf
-*.sof
-*.pof
-*.rbf
-*.smsg
-*.summary
-*.jdi
-*.pin
-*.done
-*.qarlog
-*.qarlog.idb
-*.ddb
-*.hexout
-*.rpt
-*.sld
-*.vcd
-*.vstf
-*.stp
-*.cdb
-*.hdb
-*.bak
-*.qmsg
-*.quartus/
-*.ipinfo
-*.ipx
-*.sopcinfo
-*.sopc
-*.dpf
-*.esf
-*.jic
-*.ttf
-*.tdf
+# ===== Quartus / Intel FPGA (salidas generadas) =====
+quartus/db/
+quartus/incremental_db/
+quartus/output_files/
+quartus/qdb/
+quartus/*.qws
+quartus/*.sof
+quartus/*.pof
+quartus/*.rbf
+quartus/*.smsg
+quartus/*.summary
+quartus/*.jdi
+quartus/*.pin
+quartus/*.done
+quartus/*.qarlog
+quartus/*.qarlog.idb
+quartus/*.ddb
+quartus/*.hexout
+quartus/*.rpt
+quartus/*.sld
+quartus/*.vcd
+quartus/*.vstf
+quartus/*.stp
+quartus/*.cdb
+quartus/*.hdb
+quartus/*.bak
+quartus/*.qmsg
+quartus/*.ipinfo
+quartus/*.ipx
+quartus/*.sopcinfo
+quartus/*.sopc
+quartus/*.dpf
+quartus/*.esf
+quartus/*.jic
+quartus/*.ttf
+quartus/*.tdf
 
-# ===== ModelSim / Questa / VCS =====
+# ===== ModelSim / Questa =====
+quartus/simulation/
 work/
 transcript
 vsim.wlf
@@ -62,8 +60,6 @@ verdiLog/
 
 # ===== Vivado (por si acaso) =====
 *.jou
-*.log
-*.str
 *.xpr
 *.dcp
 *.bit
