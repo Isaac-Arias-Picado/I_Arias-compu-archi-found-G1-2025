@@ -1,0 +1,142 @@
+# do run.do
+# ===== Compilando src/ =====
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 11:43:07 on Oct 19,2026
+# vlog ../src/config_pkg.sv 
+# -- Compiling package config_pkg
+# 
+# Top level modules:
+# 	--none--
+# End time: 11:43:07 on Oct 19,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 11:43:07 on Oct 19,2026
+# vlog ../src/clk_enables.sv 
+# -- Compiling module clk_enables
+# -- Importing package config_pkg
+# 
+# Top level modules:
+# 	clk_enables
+# End time: 11:43:07 on Oct 19,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 11:43:07 on Oct 19,2026
+# vlog ../src/debounce.sv 
+# -- Compiling module debounce
+# -- Importing package config_pkg
+# 
+# Top level modules:
+# 	debounce
+# End time: 11:43:07 on Oct 19,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 11:43:07 on Oct 19,2026
+# vlog ../src/finger_capture.sv 
+# -- Compiling module finger_capture
+# -- Importing package config_pkg
+# 
+# Top level modules:
+# 	finger_capture
+# End time: 11:43:07 on Oct 19,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# BloqueA
+# 0
+# 
+# ===== Bloque: BloqueA =====
+#   Compilando BloqueA/tb_clk_enables.sv
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 11:43:07 on Oct 19,2026
+# vlog BloqueA/tb_clk_enables.sv 
+# -- Compiling module tb_clk_enables
+# -- Importing package config_pkg
+# 
+# Top level modules:
+# 	tb_clk_enables
+# End time: 11:43:07 on Oct 19,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+#   Compilando BloqueA/tb_debounce.sv
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 11:43:07 on Oct 19,2026
+# vlog BloqueA/tb_debounce.sv 
+# -- Compiling module tb_debounce
+# -- Importing package config_pkg
+# 
+# Top level modules:
+# 	tb_debounce
+# End time: 11:43:07 on Oct 19,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+#   Compilando BloqueA/tb_finger_capture.sv
+# Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+# Start time: 11:43:07 on Oct 19,2026
+# vlog BloqueA/tb_finger_capture.sv 
+# -- Compiling module tb_finger_capture
+# -- Importing package config_pkg
+# 
+# Top level modules:
+# 	tb_finger_capture
+# End time: 11:43:07 on Oct 19,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+#   Corriendo tb_clk_enables
+# vsim work.tb_clk_enables 
+# Start time: 11:43:07 on Oct 19,2026
+# Loading sv_std.std
+# Loading work.config_pkg
+# Loading work.tb_clk_enables
+# Loading work.clk_enables
+# PASS [Test 1]: ticks inactivos durante reset
+# PASS [Test 2]: primer debounce tick en cnt=max
+# PASS [Test 3]: intervalo debounce correcto (50000 ciclos)
+# INFO: esperando primer tick_capture (~100000000 ciclos)...
+# PASS [Test 4]: primer capture tick en cnt=max
+#  Simulation complete. Errors: 0 
+# ** Note: $finish    : BloqueA/tb_clk_enables.sv(85)
+#    Time: 2000000090 ns  Iteration: 1  Instance: /tb_clk_enables
+# Break in Module tb_clk_enables at BloqueA/tb_clk_enables.sv line 85
+# Stopped at BloqueA/tb_clk_enables.sv line 85
+# End time: 11:44:40 on Oct 19,2026, Elapsed time: 0:01:33
+# Errors: 0, Warnings: 0
+#   Corriendo tb_debounce
+# vsim work.tb_debounce 
+# Start time: 11:44:40 on Oct 19,2026
+# Loading sv_std.std
+# Loading work.config_pkg
+# Loading work.tb_debounce
+# Loading work.debounce
+# PASS [Test 1]: admin button single pulse
+# PASS [Test 2]: test button single pulse
+# PASS [Test 3]: reset button single pulse
+# PASS [Test 4]: 00001 -> symbol 1
+# PASS [Test 5]: 00000 -> symbol 0
+# PASS [Test 6]: 10000 -> symbol 5
+# PASS [Test 7]: 00011 -> invalid
+# PASS [Test 8]: cambio rapido rechazado
+# PASS [Test 9]: 00010 -> symbol 2
+# === Simulation complete. Errors: 0 ===
+# ** Note: $finish    : BloqueA/tb_debounce.sv(133)
+#    Time: 36710 ns  Iteration: 1  Instance: /tb_debounce
+# Break in Module tb_debounce at BloqueA/tb_debounce.sv line 133
+# Stopped at BloqueA/tb_debounce.sv line 133
+# End time: 11:44:41 on Oct 19,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+#   Corriendo tb_finger_capture
+# vsim work.tb_finger_capture 
+# Start time: 11:44:41 on Oct 19,2026
+# Loading sv_std.std
+# Loading work.config_pkg
+# Loading work.tb_finger_capture
+# Loading work.finger_capture
+# PASS [Test 1]: window limpia tras reset
+# PASS [Test 2]: 1,2,3 -> 001_010_011
+# PASS [Test 3]: 4 desplaza -> 010_011_100
+# PASS [Test 4]: valid=0 no desplaza
+# PASS [Test 5]: clear_capture limpia window
+# PASS [Test 6]: 1,1,1 -> 001_001_001
+# === Simulation complete. Errors: 0 ===
+# ** Note: $finish    : BloqueA/tb_finger_capture.sv(119)
+#    Time: 930 ns  Iteration: 1  Instance: /tb_finger_capture
+# Break in Module tb_finger_capture at BloqueA/tb_finger_capture.sv line 119
+# Stopped at BloqueA/tb_finger_capture.sv line 119
+# End time: 11:44:41 on Oct 19,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# 
+# ===== Resultado: 0 fallo(s) =====
