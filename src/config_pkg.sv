@@ -56,6 +56,7 @@ package config_pkg;
     parameter logic [2:0] TEST_SPEED    = 3'd4;   // ~50 %
     parameter int         TEST_WAIT_MS  = 1000;   // espera entre abrir y cerrar
     parameter int         TEST_WAIT_CYCLES = (TEST_WAIT_MS * CLK_FREQ_HZ) / 1000;
+    parameter int         TIMEOUT_MS    = 30000;  // timeout de viaje, provisional
 
     // Buzzer 
     parameter int BUZZER_TEST_HZ    = 1000;
