@@ -31,32 +31,25 @@ package config_pkg;
     parameter int PWM_SPEED_BITS     = 3;                            // 0-7
     parameter int PWM_SPEED_MAX      = 7;
 
-    //  Viaje de puerta 
-    // T(s) = T_MAX_CYCLES * 7 / s  (s = 1..7)
-    // T(0) = 0 (sin movimiento)
-    parameter int T_MAX_S      = 4;                      // 4 s a 100 %
-    parameter int T_MAX_CYCLES = T_MAX_S * CLK_FREQ_HZ;
-
-    localparam int T_CYCLES_0 = 0;
-    localparam int T_CYCLES_1 = T_MAX_CYCLES * 7;
-    localparam int T_CYCLES_2 = T_MAX_CYCLES * 7 / 2;
-    localparam int T_CYCLES_3 = T_MAX_CYCLES * 7 / 3;
-    localparam int T_CYCLES_4 = T_MAX_CYCLES * 7 / 4;
-    localparam int T_CYCLES_5 = T_MAX_CYCLES * 7 / 5;
-    localparam int T_CYCLES_6 = T_MAX_CYCLES * 7 / 6;
-    localparam int T_CYCLES_7 = T_MAX_CYCLES;
-
-    // LUT indexable por speed[2:0].
-    localparam int TRAVEL_CYCLES [0:7] = '{
-        T_CYCLES_0, T_CYCLES_1, T_CYCLES_2, T_CYCLES_3,
-        T_CYCLES_4, T_CYCLES_5, T_CYCLES_6, T_CYCLES_7
-    };
+    // Viaje de puerta
+    // T(s) = T_MAX_MS * 7 / s  (s = 1..7), en milisegundos.
+    // El timer cuenta ticks de 1 ms, por eso los tiempos van en ms.
+    // T_MAX_S es provisional: se calibra midiendo la maqueta.
+    parameter int T_MAX_S       = 4;                  // 4 s a 100 %
+    parameter int T_MAX_MS      = T_MAX_S * 1000;
+    parameter int TRAVEL_MS_1   = T_MAX_MS * 7;       // 28000
+    parameter int TRAVEL_MS_2   = T_MAX_MS * 7 / 2;   // 14000
+    parameter int TRAVEL_MS_3   = T_MAX_MS * 7 / 3;   // 9333
+    parameter int TRAVEL_MS_4   = T_MAX_MS * 7 / 4;   // 7000
+    parameter int TRAVEL_MS_5   = T_MAX_MS * 7 / 5;   // 5600
+    parameter int TRAVEL_MS_6   = T_MAX_MS * 7 / 6;   // 4666
+    parameter int TRAVEL_MS_7   = T_MAX_MS;           // 4000
+    parameter int TRAVEL_MS_MAX = TRAVEL_MS_1;        // viaje mas largo, tope del contador
 
     // Test 
     parameter logic [2:0] TEST_SPEED    = 3'd4;   // ~50 %
     parameter int         TEST_WAIT_MS  = 1000;   // espera entre abrir y cerrar
     parameter int         TEST_WAIT_CYCLES = (TEST_WAIT_MS * CLK_FREQ_HZ) / 1000;
-    parameter int         TIMEOUT_MS    = 30000;  // timeout de viaje, provisional
 
     // Buzzer 
     parameter int BUZZER_TEST_HZ    = 1000;
