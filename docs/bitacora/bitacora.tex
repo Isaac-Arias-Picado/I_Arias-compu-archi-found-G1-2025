@@ -1,0 +1,330 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{CE-1107 Fundamentos de Arquitectura de Computadores}
+\rhead{Proyecto Grupal 1}
+\cfoot{\thepage}
+
+\newcommand{\entrada}[2]{%
+  \subsection*{#1}%
+  \addcontentsline{toc}{subsection}{#1}%
+  \noindent\textbf{Integrante(s):} #2\par\medskip
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  {\large Instituto Tecnológico de Costa Rica\par}
+  {\large Escuela de Ingeniería en Computadores\par}
+  \vspace{1cm}
+  {\large CE-1107 Fundamentos de Arquitectura de Computadores\par}
+  \vspace{2cm}
+  {\Huge\bfseries Bitácora\par}
+  \vspace{0.5cm}
+  {\Large Proyecto Grupal 1: Máquinas de Estados\par}
+  \vspace{2cm}
+  {\large Profesor: Luis Chavarría Zamora\par}
+  \vspace{1cm}
+  {\large Integrantes:\par}
+  \vspace{0.3cm}
+  Isaac Andrés Arias Picado\par
+  Byron Josué Bolaños Porras\par
+  Jose Andrés Chavarría Gamboa\par
+  Isac Marín Sirias\par
+  \vfill
+  {\large II Semestre 2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Entradas}
+
+\entrada{18 de octubre de 2026}{Isaac Andrés Arias Picado}
+
+\subsubsection*{Tareas realizadas}
+
+Se creó el repositorio con la propuesta de implementación, el proyecto de Quartus y el archivo \texttt{.gitignore}. En la rama \texttt{setup/inicial} se implementó el paquete \texttt{config\_pkg}, que reúne todas las constantes del sistema (frecuencias, tiempos, códigos de estados y eventos) para que ningún otro módulo tenga números fijos. Este cambio se integró con el pull request \#1. Después, en la rama del bloque A, se implementaron los módulos \texttt{clk\_enables} y \texttt{debounce} con sus testbenches y el script \texttt{run.do} que corre todas las simulaciones.
+
+\subsubsection*{Módulo clk\_enables}
+
+Genera pulsos de un ciclo a partir del reloj de 50 MHz para que los demás módulos trabajen a frecuencias bajas sin dividir el reloj. Produce un pulso de captura cada 2 s y un pulso de 1 kHz que comparten el debounce y el display. Usar un solo contador para estos dos ahorra flip-flops. El reset entra por la habilitación del contador y no por una entrada asíncrona.
+
+\begin{align*}
+CAP\_BITS &= \lceil \log_2(100\,000\,000) \rceil = 27, \quad SHARED\_BITS = \lceil \log_2(50\,000) \rceil = 16 \\
+tick\_capture &= (cap\_cnt = 99\,999\,999) \land \lnot reset \\
+tick\_debounce &= tick\_display = (shared\_cnt = 49\,999) \land \lnot reset \\
+en_{cap} &= \lnot reset \land \lnot is\_max_{cap} \\
+cnt_{next} &= en \land (cnt + 1)
+\end{align*}
+
+\subsubsection*{Módulo debounce}
+
+Los botones solo pasan por dos flip-flops de sincronización y un detector de flanco, ya que la FPGA tiene Schmitt trigger. El detector de dedos viene de hardware externo sin Schmitt trigger, por lo que se filtra exigiendo 20 muestras iguales seguidas a 1 kHz. Luego se valida que haya como máximo un dedo activo y se codifica a un símbolo de 0 a 5.
+
+\begin{align*}
+finger\_valid &= (stable_0 + stable_1 + stable_2 + stable_3 + stable_4 \leq 1) \\
+sym_0 &= stable_0 \lor stable_2 \lor stable_4 \\
+sym_1 &= stable_1 \lor stable_2 \\
+sym_2 &= stable_3 \lor stable_4
+\end{align*}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Filtro de estabilidad del detector de dedos (cada tick de 1 kHz)}
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Condición} & \textbf{candidate} & \textbf{count} & \textbf{stable} \\
+\midrule
+reset & 00000 & 0 & 00000 \\
+raw $\neq$ candidate & raw & 1 & Sin cambio \\
+raw = candidate y count $<$ 19 & Sin cambio & count + 1 & Sin cambio \\
+raw = candidate y count = 19 & Sin cambio & 20 & candidate \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{Verificación}
+
+El testbench de \texttt{clk\_enables} pasó sus 4 pruebas (período de captura, período compartido, reset y primer tick). El de \texttt{debounce} pasó sus 9 pruebas, que cubren el pulso único de cada botón, el filtro de 20 muestras y la validación de patrones con dos o más dedos.
+
+\entrada{19 de octubre de 2026}{Isaac Andrés Arias Picado}
+
+\subsubsection*{Tareas realizadas}
+
+Se implementó el módulo \texttt{finger\_capture} con su testbench, se documentó el bloque A y se integró a la rama \texttt{development} con el pull request \#2.
+
+\subsubsection*{Módulo finger\_capture}
+
+Mantiene una ventana con los últimos 3 símbolos capturados, de 3 bits cada uno. En cada pulso de captura entra el símbolo nuevo y sale el más viejo. Los símbolos inválidos se ignoran, para que una lectura errónea no desplace un símbolo bueno.
+
+\begin{align*}
+clear\_all &= reset \lor clear\_capture \\
+shift\_en &= tick\_capture \land finger\_valid \land \lnot clear\_all \\
+mask\_hold &= \lnot shift\_en \land \lnot clear\_all \\
+window_{next} &= (shift\_en \land \{window[5:0], sym\}) \lor (mask\_hold \land window)
+\end{align*}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Ejemplo de llenado de la ventana}
+\begin{tabular}{c c c l}
+\toprule
+\textbf{Tick} & \textbf{Símbolo} & \textbf{Válido} & \textbf{Ventana} \\
+\midrule
+1 & 001 & 1 & 000 000 001 \\
+2 & 010 & 1 & 000 001 010 \\
+3 & 011 & 1 & 001 010 011 \\
+4 & 100 & 1 & 010 011 100 \\
+5 & 100 & 0 & 010 011 100 (sin cambio) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{Verificación}
+
+El testbench pasó sus 6 pruebas, que revisan el reset, la limpieza, el desplazamiento, que un símbolo inválido no cambie la ventana y el orden correcto tras cuatro capturas.
+
+\entrada{21 de octubre de 2026}{Isac Marín Sirias}
+
+\subsubsection*{Tareas realizadas}
+
+Se implementaron los cinco módulos del bloque D, encargado de las salidas del sistema, junto con sus testbenches y su documentación.
+
+\subsubsection*{Módulo seven\_seg}
+
+Convierte un código de 5 bits en los siete segmentos de un display, activos en bajo. Para cada carácter se genera un mintérmino con el AND de los cinco bits de entrada, y cada segmento es el NOT del OR de los mintérminos de los caracteres que lo encienden. Además de 0 a F, muestra las letras o, c, n y t para los estados y modos, y los códigos 20 a 31 dejan el display apagado.
+
+\begin{align*}
+character_1 &= \lnot c_4 \land \lnot c_3 \land \lnot c_2 \land \lnot c_1 \land c_0 \\
+seg_a &= \lnot(character_0 \lor character_2 \lor character_3 \lor \ldots \lor character_{15})
+\end{align*}
+
+\subsubsection*{Módulo pwm}
+
+Genera una señal de 1 kHz con un ciclo de trabajo de $s/7$. Un contador recorre los 50\,000 ciclos de cada período, y la salida está en alto mientras el contador es menor que un umbral que depende de la velocidad. El umbral se elige con máscaras y la velocidad nueva solo se toma al empezar un período.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Umbral del PWM por velocidad}
+\begin{tabular}{c c c}
+\toprule
+\textbf{Velocidad} & \textbf{Ciclos en alto} & \textbf{Duty} \\
+\midrule
+0 & 0 & 0 \% \\
+1 & 7143 & 14.3 \% \\
+2 & 14286 & 28.6 \% \\
+3 & 21429 & 42.9 \% \\
+4 & 28571 & 57.1 \% \\
+5 & 35714 & 71.4 \% \\
+6 & 42857 & 85.7 \% \\
+7 & 50000 & 100 \% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{align*}
+pwm\_out &= running \land \lnot reset \land (counter < threshold) \\
+threshold &= \textstyle\bigvee_{s=1}^{7} \big( (active\_speed = s) \land H(s) \big)
+\end{align*}
+
+\subsubsection*{Módulo motor\_ctrl}
+
+Es combinacional y dirige el PWM a una de las dos líneas del puente H según la dirección. Las dos salidas nunca pueden estar activas a la vez, porque una exige $dir_1 \land \lnot dir_0$ y la otra $\lnot dir_1 \land dir_0$.
+
+\begin{align*}
+line_{abrir} &= \lnot reset \land dir_1 \land \lnot dir_0 \land pwm \\
+line_{cerrar} &= \lnot reset \land \lnot dir_1 \land dir_0 \land pwm
+\end{align*}
+
+\subsubsection*{Módulo buzzer\_ctrl}
+
+Genera una onda cuadrada para un buzzer pasivo. La frecuencia define el tono y un contador de duración define el patrón de cada evento. Los sonidos continuos se mantienen mientras el código esté activo, y los finitos se inician con un pulso y terminan solos. Un sonido continuo cancela uno finito.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Eventos del buzzer}
+\begin{tabular}{c l c l}
+\toprule
+\textbf{Código} & \textbf{Evento} & \textbf{Frecuencia} & \textbf{Patrón} \\
+\midrule
+1 & TEST & 1000 Hz & Continuo \\
+2 & REG\_OK & 1000 Hz & Un beep de 100 ms \\
+3 & VALID & 1000 Hz & Dos beeps de 100 ms \\
+4 & INVALID & 500 Hz & Un beep de 500 ms \\
+5 & OPENING & 2000 Hz & Continuo \\
+6 & CLOSING & 1500 Hz & Continuo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{Módulo display\_ctrl}
+
+Selecciona el carácter de cada uno de los seis displays y usa una instancia de \texttt{seven\_seg} por display, sin barrido. HEX0 muestra el estado de la puerta, HEX1 a HEX3 los tres dígitos capturados, HEX4 el modo y HEX5 la velocidad. En administración y prueba, HEX0 muestra la posición recordada de la puerta.
+
+\subsubsection*{Verificación}
+
+Se prepararon testbenches para los cinco módulos. Cada uno compara las salidas contra una tabla de referencia independiente, por ejemplo las 32 entradas del decodificador o las 16 combinaciones del control del motor. Según la documentación del bloque, la ejecución de estas simulaciones queda pendiente.
+
+\entrada{23 de octubre de 2026}{Jose Andrés Chavarría Gamboa}
+\subsubsection*{Tareas realizadas}
+Se revisó el estado general del repositorio y cada una de sus ramas ya hechas hasta el momento para comparar el enunciado con el archivo de propuesta en la rama principal. Se analizó cómo adecuar el bloque C (encargado de la máquina de estados principal e integración con el sistema) de trabajo a la implementación ya realizada en los bloques A y D, esto porque la máquina de estados principal debe poder conectarse correctamente a estas.
+
+\subsubsection*{Procedimiento y decisiones}
+Al comparar el enunciado con el trabajo realizado se encontraron varios puntos importantes a resolver. En primer lugar se identificó que no hay forma de verificar cuándo una contraseña es inválida o no ya que la comparación se realiza de manera continua. Además, como el patrón de sin poner ningún dedo se establece como un cero, constantemente la ventana se llena de ceros sin requerir interacción con el sistema. Se plantea cambiar el sistema por intentos y un contador, así al completar el intento se evalúa y se limpia la captura.
+
+Se realizó también una reestructuración del árbol de commits para ajustarse a lo que pide el enunciado (una nueva rama de trabajo por cada nueva implementación creada desde la rama development). Este cambio se integró mediante pull request y los cambios y fechas quedaron intactos.
+
+\entrada{24 de octubre de 2026}{Jose Andrés Chavarría Gamboa}
+ 
+\subsubsection*{Módulo timer\_travel}
+ 
+Se implementó el contador que usa la máquina de estados para medir tiempos. Cuenta milisegundos usando el tick de 1 kHz que ya genera el bloque A, así el registro necesita pocos bits. La primera versión tenía una salida de espera de 1 s y un timeout de 30 s, pensando en usar finales de carrera para detectar la llegada de la puerta. Más tarde se decidió detectar el fin de carrera por tiempo, por lo que el timeout se reemplazó por una tabla de tiempos de viaje según la velocidad.
+ 
+El tiempo de viaje sigue la fórmula de la propuesta y se guarda en milisegundos en el paquete de configuración.
+ 
+\begin{align*}
+T(s) &= \frac{7 \cdot T_{max}}{s}, \quad T_{max} = 4000\ \text{ms} \\
+&\Rightarrow T(1) = 28000,\ T(2) = 14000,\ \ldots,\ T(7) = 4000\ \text{ms} \\
+W &= \lceil \log_2(28000 + 1) \rceil = \lceil 14.77 \rceil = 15\ \text{bits}
+\end{align*}
+ 
+La tabla se implementó con máscaras, comparando la velocidad con cada valor y dejando pasar solo el tiempo correspondiente, de la misma forma que el umbral del PWM. El contador se detiene en el viaje más largo para no desbordarse y para que la espera de 1 s siga funcionando cuando la velocidad es 0.
+ 
+\begin{align*}
+clr &= reset \lor start \\
+inc &= tick\_ms \land \lnot clr \land \lnot at\_max \\
+hold &= \lnot clr \land \lnot inc \\
+count_{next} &= (inc \land (count+1)) \lor (hold \land count) \\
+limit &= \textstyle\bigvee_{k=1}^{7} \big( (speed = k) \land T(k) \big) \\
+wait\_done &= (count \geq 1000) \\
+travel\_done &= (count \geq limit)
+\end{align*}
+ 
+\subsubsection*{Módulo attempt\_ctrl}
+ 
+Se creó un módulo nuevo que detecta cuándo termina un intento de contraseña. Sin él, la comparación sería continua y nunca habría un momento para decidir que una contraseña es inválida. El intento empieza con el primer dígito distinto de 0, ya que el 0 es lo que se captura cuando nadie pone los dedos, y termina al capturar el tercer dígito. La salida ready se registra un ciclo después, porque en ese mismo flanco la ventana del bloque A guarda el tercer dígito.
+ 
+\begin{align*}
+clr &= reset \lor clear\_capture \\
+shift &= tick\_capture \land finger\_valid \\
+nz &= sym_2 \lor sym_1 \lor sym_0 \\
+start &= shift \land nz \land (cnt = 0) \land \lnot clr \\
+adv &= shift \land (cnt = 1) \land \lnot clr \\
+fin &= shift \land (cnt = 2) \land \lnot clr \\
+hold &= \lnot clr \land \lnot start \land \lnot adv \land \lnot fin \\
+cnt_{next} &= (start \land 01) \lor (adv \land 10) \lor (hold \land cnt) \\
+ready_{next} &= fin
+\end{align*}
+ 
+\subsubsection*{Diseño de la máquina de estados}
+ 
+Se rediseñó la tabla de transiciones de la propuesta para que cumpla el enunciado. Las dos contraseñas guardadas pasan a ser equivalentes, cualquiera abre la puerta si está cerrada y la cierra si está abierta. En administración el submodo escoge el espacio de memoria, y si la contraseña ingresada ya existe se borra, si no se guarda. Se agregó el estado VALID, que espera 1 s antes de mover el motor, porque el sonido continuo de apertura cancelaría el sonido de contraseña válida. Además, el reset borra las contraseñas pero no detiene un movimiento en curso, para que la puerta no quede a medio camino y el sistema no pierda su posición.
+ 
+\begin{table}[H]
+\centering
+\small
+\caption{Tabla de transiciones de la FSM principal}
+\begin{tabularx}{\textwidth}{l l l >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Estado} & \textbf{Condición} & \textbf{Siguiente} & \textbf{Acción} \\
+\midrule
+ERROR & rst & ERROR & Borrar contraseñas \\
+ERROR & adm & ADMIN & mode $\leftarrow$ 1 \\
+ERROR & tst y puerta cerrada & TEST & Fase 0 \\
+ERROR & ready & ERROR & INVALID \\
+\midrule
+CLOSED/OPEN & rst & ERROR & Borrar contraseñas \\
+CLOSED/OPEN & adm & ADMIN & mode $\leftarrow$ 1 \\
+CLOSED & tst & TEST & Fase 0 \\
+CLOSED/OPEN & ready y match & VALID & Guardar velocidad \\
+CLOSED/OPEN & ready y no match & Igual & INVALID \\
+\midrule
+VALID & wait\_done y speed $\neq$ 0 & OPENING/CLOSING & Arrancar motor \\
+VALID & wait\_done y speed = 0 & CLOSED/OPEN & No se mueve \\
+\midrule
+OPENING/CLOSING & rst & Igual & Borrar contraseñas, motor sigue \\
+OPENING/CLOSING & travel\_done & OPEN/CLOSED$^*$ & Motor apagado \\
+\midrule
+ADMIN & rst & ERROR & Borrar contraseñas \\
+ADMIN & mode = 0 & CLOSED/OPEN$^*$ & Salir \\
+ADMIN & adm & ADMIN & mode: 1 $\to$ 2 $\to$ 0 \\
+ADMIN & ready y match & ADMIN & Borrar, REG\_OK, mode $\leftarrow$ 0 \\
+ADMIN & ready y no match & ADMIN & Guardar en espacio mode, REG\_OK, mode $\leftarrow$ 0 \\
+\midrule
+TEST & fase 0 y travel\_done & TEST & Fase 1 (espera 1 s) \\
+TEST & fase 1 y wait\_done & TEST & Fase 2 (cerrar) \\
+TEST & fase 2 y travel\_done & CLOSED$^*$ & Fin \\
+\bottomrule
+\end{tabularx}
+ 
+\vspace{2pt}
+\footnotesize $^*$ Pasa a ERROR si no hay contraseñas registradas. Prioridad: rst $>$ adm $>$ tst $>$ ready.
+\end{table}
+ 
+\subsubsection*{Verificación}
+ 
+El timer se verificó con un testbench de 14 pruebas, que revisa el tiempo de viaje de las siete velocidades justo en el tick límite, la saturación del contador, el caso de velocidad 0 y el reinicio con start y con reset. El módulo attempt\_ctrl se verificó con 7 pruebas usando el módulo de captura real del bloque A, para confirmar que al llegar ready la ventana tiene los tres dígitos. Todas las pruebas pasaron.
+ 
+\end{document}
