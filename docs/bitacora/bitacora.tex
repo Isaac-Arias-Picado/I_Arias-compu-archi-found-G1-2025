@@ -38,7 +38,9 @@
   \vspace{2cm}
   {\Huge\bfseries Bitácora\par}
   \vspace{0.5cm}
-  {\Large Proyecto Grupal 1: Máquinas de Estados\par}
+  {\Large Proyecto Grupal 1: Máquinas de estados\par}
+  \vspace{0.3cm}
+  {\large Sistema de puerta con contraseña\par}
   \vspace{2cm}
   {\large Profesor: Luis Chavarría Zamora\par}
   \vspace{1cm}
@@ -327,4 +329,80 @@ TEST & fase 2 y travel\_done & CLOSED$^*$ & Fin \\
  
 El timer se verificó con un testbench de 14 pruebas, que revisa el tiempo de viaje de las siete velocidades justo en el tick límite, la saturación del contador, el caso de velocidad 0 y el reinicio con start y con reset. El módulo attempt\_ctrl se verificó con 7 pruebas usando el módulo de captura real del bloque A, para confirmar que al llegar ready la ventana tiene los tres dígitos. Todas las pruebas pasaron.
  
+\entrada{27 de octubre de 2026}{Byron Josué Bolaños Porras}
+
+\subsubsection*{Tareas realizadas}
+
+Se implementaron los tres módulos del bloque B, encargado del cálculo de la velocidad y de la memoria de contraseñas, cada uno con su testbench y su documentación, en la rama \texttt{BloqueB-Datos}. El bloque se ajustó a las señales definidas para la máquina de estados principal, con dos contraseñas equivalentes y la operación de la ALU dada por el primer dígito de 1 a 5.
+
+\subsubsection*{Módulo alu}
+
+Calcula la velocidad de la puerta con los tres dígitos de la ventana. El primer dígito elige la operación y los otros dos son los operandos A y B. El resultado es de 3 bits y circular, lo que da una velocidad de 0 a 7. No existe operación nula, ya que un intento nunca empieza con 0, y cualquier código fuera de 1 a 5 da 0. La multiplicación se arma con productos parciales sin usar el operador de multiplicar, y como girar 3 bits tres veces devuelve el mismo valor, las rotaciones usan $B \bmod 3$ giros.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Operaciones de la ALU}
+\begin{tabular}{c l l}
+\toprule
+\textbf{op} & \textbf{Operación} & \textbf{Resultado} \\
+\midrule
+1 & Suma & $(A + B) \bmod 8$ \\
+2 & Resta & $(A - B) \bmod 8$ \\
+3 & Multiplicación & $(A \cdot B) \bmod 8$ \\
+4 & Rotación izquierda & $rot_{izq}(A,\ B \bmod 3)$ \\
+5 & Rotación derecha & $rot_{der}(A,\ B \bmod 3)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{align*}
+mult_0 &= A_0 \land B_0 \\
+mult_1 &= (A_1 \land B_0) \oplus (A_0 \land B_1) \\
+mult_2 &= (A_2 \land B_0) \oplus (A_1 \land B_1) \oplus (A_0 \land B_2) \oplus \big((A_1 \land B_0) \land (A_0 \land B_1)\big) \\
+mod_1 &= (B = 1) \lor (B = 4) \lor (B = 7), \quad mod_2 = (B = 2) \lor (B = 5) \\
+rotl &= (mod_0 \land A) \lor (mod_1 \land \{A_1 A_0 A_2\}) \lor (mod_2 \land \{A_0 A_2 A_1\}) \\
+result &= (sel_{sum} \land sum) \lor (sel_{sub} \land sub) \lor (sel_{mult} \land mult) \lor (sel_{rotl} \land rotl) \lor (sel_{rotr} \land rotr)
+\end{align*}
+
+\subsubsection*{Módulo password\_mem}
+
+Guarda hasta dos contraseñas en dos espacios equivalentes, cada uno con su bandera de validez. La máquina de estados escribe, borra o limpia mediante pulsos de un ciclo. En cada espacio el borrado tiene prioridad sobre la escritura, para que una escritura simultánea con un borrado nunca deje datos a medias.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Transición de cada espacio de memoria}
+\begin{tabular}{c c l c}
+\toprule
+\textbf{kill} & \textbf{wr} & \textbf{pass siguiente} & \textbf{valid siguiente} \\
+\midrule
+1 & X & 000 000 000 & 0 \\
+0 & 1 & window & 1 \\
+0 & 0 & Sin cambio & Sin cambio \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{align*}
+kill_1 &= reset \lor clear\_all \lor del_1 \\
+load_1 &= wr_1 \land \lnot kill_1 \\
+hold_1 &= \lnot wr_1 \land \lnot kill_1 \\
+pass1_{next} &= (load_1 \land window) \lor (hold_1 \land pass1) \\
+valid1_{next} &= load_1 \lor (hold_1 \land valid1)
+\end{align*}
+
+\subsubsection*{Módulo comparator}
+
+Compara la ventana contra las dos contraseñas guardadas con un XOR bit a bit y un OR de reducción. Un espacio vacío nunca coincide, porque sin la bandera de validez una ventana en ceros igualaría una memoria vacía y daría un acierto falso.
+
+\begin{align*}
+equal_1 &= \lnot \textstyle\bigvee_{i=0}^{8} (window_i \oplus pass1_i) \\
+match_1 &= equal_1 \land valid_1
+\end{align*}
+
+\subsubsection*{Verificación}
+
+Los testbenches de la ALU, la memoria y el comparador pasaron sus 13, 15 y 11 pruebas. La ALU se probó con las 64 combinaciones de operandos para cada operación, la memoria con los casos de prioridad entre escritura y borrado, y el comparador con un barrido de las 512 ventanas posibles.
+
 \end{document}
