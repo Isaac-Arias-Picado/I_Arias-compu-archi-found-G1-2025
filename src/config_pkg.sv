@@ -83,16 +83,15 @@ package config_pkg;
         S_OPEN    = 3'd3,
         S_CLOSING = 3'd4,
         S_ADMIN   = 3'd5,
-        S_TEST    = 3'd6
+        S_TEST    = 3'd6,
+        S_VALID   = 3'd7
     } state_t;
 
     // Submodos de admin 
     typedef enum logic [2:0] {
-        M_NORMAL    = 3'd0,
-        M_REG_OPEN  = 3'd1,
-        M_REG_CLOSE = 3'd2,
-        M_DEL_OPEN  = 3'd3,
-        M_DEL_CLOSE = 3'd4
+        M_NORMAL = 3'd0,
+        M_SLOT1  = 3'd1,
+        M_SLOT2  = 3'd2
     } admin_mode_t;
 
     // Operaciones ALU 
