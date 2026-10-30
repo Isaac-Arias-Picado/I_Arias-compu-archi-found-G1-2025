@@ -49,7 +49,7 @@ package config_pkg;
     // Test 
     parameter logic [2:0] TEST_SPEED    = 3'd4;   // ~50 %
     parameter int         TEST_WAIT_MS  = 1000;   // espera entre abrir y cerrar
-    parameter int         TEST_WAIT_CYCLES = (TEST_WAIT_MS * CLK_FREQ_HZ) / 1000;
+    parameter int         TEST_WAIT_CYCLES = (CLK_FREQ_HZ / 1000) * TEST_WAIT_MS;
 
     // Buzzer 
     parameter int BUZZER_TEST_HZ    = 1000;
@@ -69,11 +69,11 @@ package config_pkg;
 
     // Duraciones y patrones
     parameter int BUZZER_BEEP_MS        = 100;
-    parameter int BUZZER_BEEP_CYCLES    = (BUZZER_BEEP_MS * CLK_FREQ_HZ) / 1000;
+    parameter int BUZZER_BEEP_CYCLES    = (CLK_FREQ_HZ / 1000) * BUZZER_BEEP_MS;
     parameter int BUZZER_INVALID_MS     = 500;
-    parameter int BUZZER_INVALID_CYCLES = (BUZZER_INVALID_MS * CLK_FREQ_HZ) / 1000;
+    parameter int BUZZER_INVALID_CYCLES = (CLK_FREQ_HZ / 1000) * BUZZER_INVALID_MS;
     parameter int BUZZER_GAP_MS         = 100;
-    parameter int BUZZER_GAP_CYCLES     = (BUZZER_GAP_MS * CLK_FREQ_HZ) / 1000;
+    parameter int BUZZER_GAP_CYCLES     = (CLK_FREQ_HZ / 1000) * BUZZER_GAP_MS;
 
     //  Codificacion de estados 
     typedef enum logic [2:0] {
