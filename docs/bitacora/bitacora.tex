@@ -405,4 +405,41 @@ match_1 &= equal_1 \land valid_1
 
 Los testbenches de la ALU, la memoria y el comparador pasaron sus 13, 15 y 11 pruebas. La ALU se probó con las 64 combinaciones de operandos para cada operación, la memoria con los casos de prioridad entre escritura y borrado, y el comparador con un barrido de las 512 ventanas posibles.
 
+\entrada{28 de octubre de 2026}{Jose Andrés Chavarría Gamboa}
+
+\subsubsection*{Tareas realizadas}
+
+Se actualizó la propuesta del repositorio para que coincida con el rediseño de la máquina de estados y se integró a development mediante pull request. En el paquete de configuración se agregó el código del estado VALID y los submodos de administración. Luego se implementó el módulo fsm\_main con su testbench y su documentación, y por último el módulo top, que une los cuatro bloques, junto con la asignación de pines de la tarjeta.
+
+\subsubsection*{Módulo fsm\_main}
+
+La máquina se construyó fila por fila a partir de la tabla de transiciones. Cada fila de la tabla se convierte en una señal que vale 1 cuando se está en ese estado y se cumple su condición. Como el enunciado no permite if, case ni ternario, la prioridad entre botones no se puede dar con un else, así que cada fila lleva negadas las condiciones completas de las filas de arriba de su mismo estado. Por ejemplo, en ERROR el botón de prueba solo cuenta si la puerta está cerrada, entonces la fila de ready niega esa condición entera y no solo el botón.
+
+\begin{align*}
+e\_adm &= is\_error \land \lnot rst \land adm \\
+e\_tst &= is\_error \land \lnot rst \land \lnot adm \land tst \land \lnot door \\
+e\_rdy &= is\_error \land \lnot rst \land \lnot adm \land \lnot(tst \land \lnot door) \land ready
+\end{align*}
+
+Cada registro se escribe con su propia expresión, sumando con OR el valor que carga cada fila enmascarado por su señal, más un término que mantiene el valor cuando ninguna fila lo toca. Las filas que van a ERROR no necesitan término en el siguiente estado porque su código es 000, basta con que apaguen el mantener. El submodo y la fase del test solo se mantienen dentro de su estado, de modo que fuera de ADMIN y de TEST vuelven solos a 0.
+
+\begin{align*}
+hold_{st} &= \lnot(e\_adm \lor e\_tst \lor co\_rst \lor co\_adm \lor \ldots \lor t\_end) \\
+state_{next} &= \lnot reset \land \big((e\_adm \lor co\_adm) \land S_{ADMIN} \lor \ldots \lor hold_{st} \land state\big) \\
+speed_{next} &= \lnot reset \land \big(co\_ok \land alu\_result \lor (e\_tst \lor c\_tst) \land TEST\_SPEED \lor spd_{hold} \land speed\big) \\
+door_{next} &= \lnot reset \land \big(opg\_done \lor (door \land \lnot clg\_done)\big)
+\end{align*}
+
+Al escribir el código se notó que la tabla de transiciones no mostraba todos los efectos de cada fila. La entrada a TEST, por ejemplo, también carga la velocidad del test y reinicia el timer, y la evaluación de un intento limpia la captura. Por esto la documentación del módulo se actualizó con una columna de acciones completa, junto con las ecuaciones de todas las señales.
+
+\subsubsection*{Módulo top}
+
+El módulo top instancia los módulos de los cuatro bloques y los conecta entre sí, casi sin lógica propia. Incluye un reset de encendido con un contador de 4 bits que arranca en 0 al programar la FPGA y mantiene el reset activo durante 8 ciclos. Los botones KEY de la tarjeta son activos en bajo, por lo que entran negados. Además, durante VALID se le pasa al display el estado CLOSED u OPEN según la posición de la puerta, para que muestre la puerta y no la letra E de error.
+
+Los pines se tomaron del manual de la DE10-Standard. Los sensores de dedos usan GPIO 0 a 4, las dos líneas del motor GPIO 5 y 6, y el buzzer GPIO 7. En el archivo de Quartus se cambió la entidad principal a top, ya que el nombre anterior empezaba con un número y no es válido para un módulo, y se quitó del proyecto un testbench que no debe sintetizarse. Para compilar se trajo a la rama el bloque B, integrándolo primero a development con su pull request.
+
+\subsubsection*{Verificación}
+
+El testbench de fsm\_main usa el timer\_travel real y un modelo simple de la memoria del bloque B, con el tick de 1 ms acelerado. Tiene 16 pruebas con 30 comprobaciones, entre ellas el registro y borrado de contraseñas en los dos espacios, la apertura y el cierre, la velocidad 0, el reset durante un movimiento, la secuencia de prueba completa y la prioridad del reset sobre admin. Todas pasaron en Questa. Al revisar los módulos del grupo también se encontraron operadores ternarios en debounce.sv, lo que se le comunicó al encargado del bloque A junto con una versión con máscaras.
+
 \end{document}
