@@ -442,4 +442,42 @@ Los pines se tomaron del manual de la DE10-Standard. Los sensores de dedos usan 
 
 El testbench de fsm\_main usa el timer\_travel real y un modelo simple de la memoria del bloque B, con el tick de 1 ms acelerado. Tiene 16 pruebas con 30 comprobaciones, entre ellas el registro y borrado de contraseñas en los dos espacios, la apertura y el cierre, la velocidad 0, el reset durante un movimiento, la secuencia de prueba completa y la prioridad del reset sobre admin. Todas pasaron en Questa. Al revisar los módulos del grupo también se encontraron operadores ternarios en debounce.sv, lo que se le comunicó al encargado del bloque A junto con una versión con máscaras.
 
+\entrada{29 de octubre de 2026}{Jose Andrés Chavarría Gamboa}
+
+\subsubsection*{Tareas realizadas}
+
+Se verificó el sistema completo en simulación con todos los bloques conectados mediante el módulo top, y se compiló por primera vez el proyecto en Quartus para la DE10-Standard. También se revisó de nuevo el enunciado contra lo implementado y se empezó a armar el circuito de los sensores de dedos en protoboard.
+
+\subsubsection*{Verificación del sistema completo}
+
+Se escribió un testbench para el módulo top que usa los módulos reales de los cuatro bloques. Como la captura toma un dígito cada 2 s, simular tres intentos con los tiempos reales tardaría horas, por lo que se creó una copia del paquete de configuración solo para simulación, donde la captura ocurre cada 2000 ciclos y el tick de 1 ms cada 10 ciclos. La copia conserva el mismo nombre de paquete, así que ningún módulo se modifica y en Quartus se sigue usando el paquete original.
+
+La prueba registra una contraseña poniendo los dedos en los sensores, la usa para abrir la puerta revisando el PWM del motor y el display, prueba una contraseña incorrecta y termina con el reset. Las 9 comprobaciones pasaron en Questa.
+
+\subsubsection*{Compilación en Quartus}
+
+La primera compilación terminó sin errores, pero entre las advertencias aparecieron dos problemas. El primero fue un desborde en las constantes de duración del buzzer, que se calculaban multiplicando los milisegundos por la frecuencia del reloj antes de dividir entre 1000. Ese producto no cabe en un entero de 32 bits, y la duración del sonido de contraseña inválida llegaba a dar un valor negativo.
+
+\begin{align*}
+500 \cdot 50\,000\,000 &= 2.5 \times 10^{10} > 2^{31} - 1 \\
+&\Rightarrow \text{se divide primero}\quad \frac{50\,000\,000}{1000} \cdot 500 = 25\,000\,000
+\end{align*}
+
+El segundo fue el aviso de que no se cumplían los tiempos, porque sin un archivo de restricciones Quartus supone un reloj de 1 GHz. Para ambos se dejó preparada la corrección, que se aplicó al día siguiente.
+
+Al revisar el enunciado se confirmó que el display debe mostrar la velocidad normalizada de 0 a F, como estaba en la propuesta, lo que requiere un cambio en el control del display del bloque D. Además se notó que el enunciado habla de símbolos de cero a cinco dedos, mientras que el diseño usa un solo dedo cuya posición indica el dígito, por lo que el punto quedó para discutirse con el grupo.
+
+\subsubsection*{Circuito de los sensores de dedos}
+
+Cada sensor usa una fotorresistencia en un divisor de tensión. Como el divisor entrega un voltaje analógico y la FPGA espera niveles lógicos claros, cada salida pasa por un inversor con Schmitt trigger del integrado 74HC14, que tiene seis inversores y se alimenta con los 3.3 V de la tarjeta. La fotorresistencia va hacia 3.3 V y la resistencia fija hacia tierra, de modo que al tapar el sensor el nodo baja y el inversor entrega un 1.
+
+\begin{align*}
+V_{nodo} &= 3.3 \cdot \frac{R}{R + R_{LDR}} \\
+R &\approx \sqrt{R_{luz} \cdot R_{dedo}} = \sqrt{2\ \text{k}\Omega \cdot 40\ \text{k}\Omega} \approx 8.9\ \text{k}\Omega
+\end{align*}
+
+A 3.3 V el inversor cambia a 1 cuando la entrada baja de aproximadamente 1 V y vuelve a 0 cuando sube de 1.8 V. El cálculo da cerca de 9 k$\Omega$ con el dedo bien puesto, pero se escogió una resistencia menor, de 4.7 k$\Omega$, para que el sensor siga funcionando aunque el dedo no tape del todo. Con ella el nodo queda en 2.3 V sin dedo, en 0.35 V con el dedo bien puesto y en 0.63 V si la fotorresistencia solo llega a 20 k$\Omega$. La quinta fotorresistencia cambiaba muy poco entre luz y oscuridad, así que se decidió reemplazarla. La posición de los pines de alimentación del conector GPIO no aparece en el manual, por lo que se identificó midiendo con el multímetro antes de conectar.
+
+Durante el armado una pata de una resistencia hizo contacto entre la línea de 3.3 V y tierra, y se notó por el olor y porque la pata cambió de color. Se desconectó de inmediato, se revisó que la tarjeta siguiera funcionando, se cambió la resistencia y se cortaron las patas al ras para evitar otro corto.
+
 \end{document}
