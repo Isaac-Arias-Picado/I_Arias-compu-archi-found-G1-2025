@@ -112,9 +112,15 @@ initial begin
     check(dut.state == S_OPEN && MOTOR == 2'b00,
           "Test 3d: termina en OPEN con el motor apagado");
 
-    //Test 4: contrasena incorrecta
-    enter(3, 3, 3);
-    check(dut.state == S_OPEN, "Test 4: una contrasena incorrecta no cambia nada");
+    //Test 4: contrasena incorrecta, el display mantiene el ultimo intento
+    FINGER = pat(3);
+    repeat (3 * CAPTURE_CYCLES) @(posedge CLOCK_50);
+    FINGER = 0;
+    repeat (100) @(posedge CLOCK_50);
+    check(dut.disp_window == {3'd3, 3'd3, 3'd3} && dut.window == 9'd0,
+          "Test 4a: tras evaluar, la ventana se limpia pero el display sigue mostrando 3-3-3");
+    repeat (CAPTURE_CYCLES + 500) @(posedge CLOCK_50);
+    check(dut.state == S_OPEN, "Test 4b: una contrasena incorrecta no cambia nada");
 
     //Test 5: reset
     press(0);

@@ -213,12 +213,25 @@ assign disp_state = ({3{~is_valid}} & state)
 | ({3{is_valid & ~door_open_flag}} & S_CLOSED)
 | ({3{is_valid & door_open_flag}} & S_OPEN);
 
+//El display muestra la ultima captura y la mantiene hasta la siguiente,
+//asi el usuario alcanza a ver el tercer digito aunque la FSM limpie la ventana
+logic shift, shift_d;
+logic [8:0] disp_window, disp_window_next;
+assign shift = tick_capture & finger_valid;
+assign disp_window_next = {9{~reset}} & (({9{shift_d}} & window)
+| ({9{~shift_d}} & disp_window));
+
+always_ff @(posedge clk) begin
+    shift_d <= shift;
+    disp_window <= disp_window_next;
+end
+
 display_ctrl u_display_ctrl (
     .reset(reset),
     .state(disp_state),
     .mode(mode),
     .speed(speed),
-    .window(window),
+    .window(disp_window),
     .door_open_flag(door_open_flag),
     .HEX0(HEX0),
     .HEX1(HEX1),
