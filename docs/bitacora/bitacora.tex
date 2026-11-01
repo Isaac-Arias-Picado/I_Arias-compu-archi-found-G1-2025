@@ -57,6 +57,25 @@
 \tableofcontents
 \newpage
 
+\section{Herramientas de automatización utilizadas}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Herramienta} & \textbf{Uso en el proyecto} \\
+\midrule
+Quartus Prime Lite 25.1 & Síntesis del diseño, asignación de pines de la DE10-Standard, análisis de tiempos y programación de la FPGA por JTAG. \\
+Questa Altera Starter FPGA Edition 2025.2 & Compilación y simulación de los módulos y de sus bancos de pruebas. \\
+EDA Playground (Riviera-PRO) & Simulación de algunos módulos del bloque de salidas. \\
+Git y GitHub & Control de versiones, ramas por tarea e integración mediante pull requests. \\
+Visual Studio Code & Edición del código SystemVerilog y de la documentación. \\
+Overleaf y \LaTeX & Redacción de la bitácora. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \section{Entradas}
 
 \entrada{18 de octubre de 2026}{Isaac Andrés Arias Picado}
@@ -479,5 +498,50 @@ R &\approx \sqrt{R_{luz} \cdot R_{dedo}} = \sqrt{2\ \text{k}\Omega \cdot 40\ \te
 A 3.3 V el inversor cambia a 1 cuando la entrada baja de aproximadamente 1 V y vuelve a 0 cuando sube de 1.8 V. El cálculo da cerca de 9 k$\Omega$ con el dedo bien puesto, pero se escogió una resistencia menor, de 4.7 k$\Omega$, para que el sensor siga funcionando aunque el dedo no tape del todo. Con ella el nodo queda en 2.3 V sin dedo, en 0.35 V con el dedo bien puesto y en 0.63 V si la fotorresistencia solo llega a 20 k$\Omega$. La quinta fotorresistencia cambiaba muy poco entre luz y oscuridad, así que se decidió reemplazarla. La posición de los pines de alimentación del conector GPIO no aparece en el manual, por lo que se identificó midiendo con el multímetro antes de conectar.
 
 Durante el armado una pata de una resistencia hizo contacto entre la línea de 3.3 V y tierra, y se notó por el olor y porque la pata cambió de color. Se desconectó de inmediato, se revisó que la tarjeta siguiera funcionando, se cambió la resistencia y se cortaron las patas al ras para evitar otro corto.
+
+\entrada{30 de octubre de 2026}{Jose Andrés Chavarría Gamboa}
+
+\subsubsection*{Tareas realizadas}
+
+Se aplicaron las correcciones encontradas en la primera compilación y se volvió a compilar el proyecto. Se terminó de armar en protoboard el circuito de los sensores con fotorresistencias nuevas, se diseñó el manejo del buzzer con un transistor y se conectaron los optoacopladores. Por último se cargó el diseño por primera vez en la FPGA.
+
+\subsubsection*{Correcciones en Quartus}
+
+En el paquete de configuración se cambió el cálculo de las duraciones del buzzer para dividir primero entre 1000 y después multiplicar por los milisegundos, de modo que ningún valor intermedio supere el rango de un entero de 32 bits. Además se agregó un archivo de restricciones que indica que el reloj de 50 MHz tiene un período de 20 ns, y se agregaron al archivo de exclusiones de git los archivos que genera Quartus al compilar.
+
+Con esto la compilación pasó de 38 a 8 advertencias, todas informativas, y desaparecieron el desborde y el aviso de tiempos. El análisis de tiempos reporta un margen de 9.45 ns en el peor caso, así que el camino más largo del diseño tarda cerca de 10.5 ns, dentro de los 20 ns del período. Durante una de las compilaciones se cambió de rama mientras Quartus todavía corría, y la última etapa leyó los archivos de la otra rama, por lo que se tomó como regla cerrar Quartus antes de cambiar de rama.
+
+\subsubsection*{Sensores de dedos}
+
+Las fotorresistencias nuevas miden entre 3 y 3.5 k$\Omega$ con luz y entre 30 y 35 k$\Omega$ con el dedo encima, es decir, cambian unas diez veces, el doble que las anteriores. El valor ideal de la resistencia fija era de unos 6.8 k$\Omega$, pero entre las disponibles se usó la de 10 k$\Omega$. Con ella los cinco nodos quedaron cerca de 2.2 V sin dedo y el peor caso con dedo fue de 0.67 V, por lo que los cinco inversores cambiaban correctamente.
+
+Al repetir la prueba en un cuarto con menos luz, las salidas se quedaban siempre en 1, como si siempre hubiera un dedo. Sin dedo el nodo medía 1.8 V, lo que corresponde a una fotorresistencia de unos 8.3 k$\Omega$.
+
+\begin{align*}
+R_{LDR} &= R \cdot \frac{3.3 - V_{nodo}}{V_{nodo}} = 10\ \text{k}\Omega \cdot \frac{3.3 - 1.8}{1.8} \approx 8.3\ \text{k}\Omega
+\end{align*}
+
+Ese voltaje queda justo en el umbral de subida del Schmitt trigger, así que una vez que el dedo bajaba la salida a 1, el nodo ya no subía lo suficiente para regresarla a 0. Con esto se vio que la resistencia fija depende de la iluminación del lugar, porque con menos luz la fotorresistencia sube tanto sin dedo como con dedo. Como regla práctica se tomó una resistencia fija de entre 2 y 2.5 veces el valor de la fotorresistencia sin dedo, lo que deja el nodo cerca de 2.3 V. Para la defensa se decidió llevar resistencias de varios valores y medir las fotorresistencias en el aula antes de presentar.
+
+\subsubsection*{Buzzer y optoacopladores}
+
+El buzzer resultó ser pasivo, ya que con voltaje constante solo hace un clic, y su bobina mide 14 $\Omega$. Un pin de la FPGA no puede entregar esa corriente, por lo que se maneja con un transistor NPN 2N3904 que funciona como interruptor. El pin solo alimenta la base y la corriente del buzzer sale de la línea de 3.3 V del conector, que soporta hasta 1.5 A. En paralelo con el buzzer se colocó un diodo 1N4148 para absorber el pico que genera la bobina al apagarse.
+
+Con 1 k$\Omega$ en la base el transistor no se saturaba y el colector quedaba en 1.1 V. Se bajó la resistencia de base a 470 $\Omega$ y se agregó una resistencia de 10 $\Omega$ en serie con el buzzer, con lo que el colector bajó a 0.107 V.
+
+\begin{align*}
+I_B &= \frac{3.3 - 0.7}{470} \approx 5.5\ \text{mA} \\
+I_C &= \frac{3.3 - 0.1}{10 + 14} \approx 133\ \text{mA}
+\end{align*}
+
+Los LED de los optoacopladores se conectaron a los pines de la FPGA con una resistencia de 330 $\Omega$, y sus cátodos a la tierra de la parte lógica, separada de la tierra de la fuente del motor.
+
+\begin{align*}
+I_{LED} &= \frac{3.3 - 1.2}{330} \approx 6.4\ \text{mA}
+\end{align*}
+
+\subsubsection*{Primera prueba en la FPGA}
+
+Se cargó el diseño con el programador de Quartus por JTAG. Al iniciar, el display mostró la E de error y la n del modo normal, los botones de administración y prueba respondieron, y los dígitos de los sensores entraron en el display cada 2 s. El modo de prueba completó la secuencia de abrir, esperar y cerrar en unos 15 s, como se esperaba para la velocidad de prueba.
 
 \end{document}
