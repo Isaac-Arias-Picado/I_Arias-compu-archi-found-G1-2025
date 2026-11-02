@@ -544,4 +544,32 @@ I_{LED} &= \frac{3.3 - 1.2}{330} \approx 6.4\ \text{mA}
 
 Se cargó el diseño con el programador de Quartus por JTAG. Al iniciar, el display mostró la E de error y la n del modo normal, los botones de administración y prueba respondieron, y los dígitos de los sensores entraron en el display cada 2 s. El modo de prueba completó la secuencia de abrir, esperar y cerrar en unos 15 s, como se esperaba para la velocidad de prueba.
 
+\entrada{31 de octubre de 2026}{Jose Andrés Chavarría Gamboa}
+
+\subsubsection*{Tareas realizadas}
+
+Se continuó el ensayo funcional del sistema en la FPGA y se corrigió un problema de visualización en el display de los dígitos ingresados. Además se revisaron los entregables que pide el enunciado y los datos físicos que hacen falta para la propuesta de investigación.
+
+\subsubsection*{Visualización del último intento}
+
+Durante el ensayo los dígitos entraban correctamente desde los sensores, pero el tercer dígito de cada intento nunca llegaba a verse en el display. Al capturarse el tercer dígito, el control de intentos avisa a la máquina de estados, esta evalúa la contraseña y en el ciclo siguiente limpia la ventana de captura. Como esto ocurre en unos 20 ns, el display pasaba directamente a mostrar ceros y el usuario no podía comprobar lo que había ingresado.
+
+Se consideraron dos soluciones. La primera, propuesta por un compañero, era retrasar la evaluación hasta la siguiente captura, 2 s después, para que el intento se viera antes de sonar el resultado. La segunda era darle al display su propia copia de la ventana, actualizada solo cuando entra un dígito nuevo. Se escogió la segunda porque la respuesta del sistema sigue siendo inmediata y el cambio queda solo en el módulo top, sin tocar la máquina de estados ni el control de intentos.
+
+La copia se carga un ciclo después de cada captura, cuando la ventana ya contiene el dígito nuevo, y se mantiene igual el resto del tiempo. Así, aunque la máquina de estados limpie la ventana, el display sigue mostrando el intento completo hasta la siguiente captura, y después vuelve a mostrar los dígitos que entran.
+
+\begin{align*}
+shift &= tick\_capture \land finger\_valid \\
+shift\_d_{next} &= shift \\
+disp_{next} &= \lnot reset \land \big((shift\_d \land window) \lor (\lnot shift\_d \land disp)\big)
+\end{align*}
+
+\subsubsection*{Verificación}
+
+Al testbench del sistema completo se le agregó una prueba que ingresa un intento, revisa que la ventana quedó en cero después de la evaluación y que el display todavía muestra los tres dígitos. Pasaron las 10 comprobaciones en Questa. En Quartus la compilación terminó sin errores, con 559 celdas lógicas y un margen de 9.86 ns en el peor caso de tiempos.
+
+\subsubsection*{Entregables y datos físicos}
+
+Según el enunciado, en la defensa se deben mostrar simulaciones junto con el diseño corriendo en la FPGA, además de un diagrama general del sistema desde el usuario hasta los módulos y un diagrama interno de la FPGA hecho por el grupo. Para la sección de datos de la propuesta de investigación se definió medir, para cada velocidad de 1 a 7, cinco tiempos de apertura y cinco de cierre, anotando si la puerta llega al final del recorrido. También se medirá el voltaje promedio del PWM en el pin de cada dirección, que debe ser cercano a $3.3 \cdot s / 7$ V, y la corriente del motor con el multímetro en serie con su fuente.
+
 \end{document}
