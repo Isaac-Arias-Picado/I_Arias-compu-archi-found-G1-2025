@@ -572,4 +572,62 @@ Al testbench del sistema completo se le agregó una prueba que ingresa un intent
 
 Según el enunciado, en la defensa se deben mostrar simulaciones junto con el diseño corriendo en la FPGA, además de un diagrama general del sistema desde el usuario hasta los módulos y un diagrama interno de la FPGA hecho por el grupo. Para la sección de datos de la propuesta de investigación se definió medir, para cada velocidad de 1 a 7, cinco tiempos de apertura y cinco de cierre, anotando si la puerta llega al final del recorrido. También se medirá el voltaje promedio del PWM en el pin de cada dirección, que debe ser cercano a $3.3 \cdot s / 7$ V, y la corriente del motor con el multímetro en serie con su fuente.
 
+
+\entrada{1 de noviembre de 2026}{Jose Andrés Chavarría Gamboa}
+
+\subsubsection*{Tareas realizadas}
+
+Se elaboró el diagrama general del sistema que pide el enunciado, desde el usuario hasta los actuadores.
+
+\subsubsection*{Diagrama general del sistema}
+
+El diagrama sigue el recorrido de la información. El usuario coloca los dedos sobre las fotorresistencias, cuyos divisores pasan por el 74HC14 y entran a la FPGA. Dentro de la FPGA se muestran los cuatro bloques en el orden en que trabajan, entradas, datos, control y salidas. De la FPGA salen tres caminos, los displays de siete segmentos, el transistor que maneja el buzzer y los optoacopladores que controlan el puente H y el motor de la puerta. La alimentación del motor se dibujó como un grupo aparte para dejar claro que tiene su propia fuente y su propia tierra, separadas de la tarjeta.
+
+Se hizo en Mermaid porque el diagrama se escribe como texto, de modo que puede guardarse en el repositorio, revisarse en los commits y modificarse sin redibujarlo. Desde el código se exporta la imagen en PNG para la documentación. El diagrama interno de la FPGA, con los módulos y sus señales, queda para una entrada posterior.
+
+\entrada{2 de noviembre de 2026}{Jose Andrés Chavarría Gamboa}
+
+\subsubsection*{Tareas realizadas}
+
+Se subió el diagrama general a la rama de documentación y se hicieron en la FPGA las mediciones físicas para la propuesta de investigación. Durante las pruebas se cambió el motor, se bajó la frecuencia del PWM, se ajustaron los tonos del buzzer y se corrigió el orden de los dígitos en el display. Al final se tomaron fotografías del montaje, se actualizó la propuesta y se abrió el pull request del Bloque C hacia \texttt{development}.
+
+\subsubsection*{Condiciones de las pruebas}
+
+Las pruebas se hicieron en una habitación con buena iluminación y resistencias fijas de 10 k$\Omega$ en los sensores. El puente H se alimentó con una batería de 9 V a través de un regulador de 6 V. La batería midió 8.87 V al inicio y 8.53 V al final. Como no se cuenta con osciloscopio, todas las mediciones se hicieron con multímetro y cronómetro.
+
+\subsubsection*{Voltaje promedio del PWM}
+
+Con el multímetro en la línea de apertura se midió el voltaje mientras la puerta abría a cada velocidad. El multímetro promedia la señal, así que la lectura debe ser cercana a $3.3 \cdot s/7$ V. Los valores fueron desde 0.477 V en $s = 1$ hasta 3.338 V en $s = 7$, todos alrededor de 1.1 \% por encima de lo esperado. La diferencia se debe a que el nivel alto real del pin es 3.338 V y no 3.3 V, porque al dividir cada lectura entre la de $s = 7$ el ciclo de trabajo coincide con $s/7$ en menos de 0.1 puntos porcentuales. El voltaje sube 0.477 V por cada nivel con un ajuste lineal casi perfecto, por lo que las siete velocidades quedan repartidas de forma pareja.
+
+\subsubsection*{Temporizador de recorrido}
+
+Se cronometró la duración del tono de apertura, que suena durante todo el recorrido programado, para cada velocidad. Los tiempos siguieron la relación $T(s) = 28/s$ s, desde 28.5 s en $s = 1$ hasta 4.21 s en $s = 7$. En promedio el tiempo medido fue 0.29 s mayor que el programado, y esa diferencia no creció con la duración, por lo que se atribuye al tiempo de reacción al usar el cronómetro y no al temporizador.
+
+\subsubsection*{Motor y frecuencia del PWM}
+
+Con el motor original y el PWM a 1 kHz, la velocidad 1 no lograba arrancar el motor aunque el pin entregaba el voltaje promedio correcto, y a la velocidad 7 daba muchas vueltas durante los 4 s del recorrido. Se consultó al profesor, quien indicó que no importa la cantidad de vueltas siempre que se note el cambio de ciclo de trabajo, y sugirió revisar la frecuencia.
+
+Se cambió el motor por un micromotorreductor 150:1 de 6 a 12 V, que gira cerca de 90 RPM a 6 V y da un movimiento más lento y con más fuerza. A 1 kHz este motor arrancaba desde la velocidad 2, pero casi no se notaba diferencia entre niveles. Se concluyó que los pulsos eran demasiado cortos para el optoacoplador y el puente H, que tardan en conmutar y deforman el pulso, y que sin carga el motor sigue girando por inercia durante el tiempo apagado.
+
+Se bajó la frecuencia a 200 Hz y el motor arrancó en todas las velocidades, con diferencias visibles entre niveles. Luego se dejó en 100 Hz para tener más margen. Con esto el período del PWM pasa a ser de 500\,000 ciclos de reloj, y el umbral de cada velocidad se multiplica por diez sin cambiar el ciclo de trabajo.
+
+\begin{align*}
+N &= \frac{50\,000\,000}{100} = 500\,000 \text{ ciclos} \\
+H(1) &= \operatorname{round}\left(\frac{500\,000 \cdot 1}{7}\right) = 71\,429 \text{ ciclos}
+\end{align*}
+
+La corriente del motor nuevo a velocidad 7, sin carga, fue de 0.03 A, coherente con los cerca de 40 mA que indica el fabricante a 6 V. Vista de frente, la apertura gira en sentido horario y el cierre en sentido antihorario, y el motor se detiene al terminar cada recorrido.
+
+\subsubsection*{Buzzer y display}
+
+El tono continuo de apertura y cierre, de 2000 Hz y 1500 Hz, resultaba muy fuerte durante todo el recorrido. Se bajó a 800 Hz para la apertura y 600 Hz para el cierre, con lo que el buzzer suena más grave y con menos volumen, y los dos movimientos se siguen distinguiendo.
+
+En el display los tres dígitos del intento aparecían al revés, con el primero a la derecha. Se invirtió el orden de los grupos de tres bits al conectar la copia de la ventana con el control del display, de modo que el dígito más reciente quede en HEX1 y el intento se lea de izquierda a derecha.
+
+\subsubsection*{Verificación y evidencia}
+
+Con todos los cambios se volvió a compilar en Quartus sin errores, con 566 celdas lógicas y un margen de 9.76 ns en el peor caso de tiempos. En la FPGA se recorrieron todos los estados y se fotografió el display en cada uno, error al encender, administración, intento aceptado, apertura, puerta abierta, cierre y prueba. También se fotografiaron el montaje completo, los sensores, el buzzer y la etapa de potencia.
+
+Con estos datos se actualizó la propuesta de investigación, con la etapa física, las tablas de mediciones, la simulación del PWM a 100 Hz y el análisis del cambio de frecuencia. Queda pendiente construir la maqueta de la puerta para medir el recorrido real y ajustar los tiempos de cada velocidad.
+
 \end{document}
