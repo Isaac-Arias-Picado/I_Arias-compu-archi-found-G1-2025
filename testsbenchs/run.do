@@ -30,7 +30,13 @@ foreach blk $blocks {
     echo ""
     echo "===== Bloque: $blk ====="
 
-    set tbs [lsort [glob -nocomplain -directory $blk *.sv]]
+    # Solo testbenches tb_*.sv. tb_top se corre aparte con el paquete acelerado.
+    set tbs {}
+    foreach f [lsort [glob -nocomplain -directory $blk tb_*.sv]] {
+        if {[file tail $f] ne "tb_top.sv"} {
+            lappend tbs $f
+        }
+    }
     if {[llength $tbs] == 0} {
         echo "  (sin archivos .sv, saltando)"
         continue
@@ -58,6 +64,32 @@ foreach blk $blocks {
             incr total_errors
         }
     }
+}
+
+# ---------- Sistema completo (tb_top) ----------
+# Usa config_pkg_sim.sv en una libreria aparte, para no reemplazar
+# el paquete real con el que se compilaron los demas testbenches.
+echo ""
+echo "===== Sistema completo: tb_top ====="
+if {[file exists work_top]} {
+    vdel -all -lib work_top
+}
+vlib work_top
+if {[catch {
+    vlog -work work_top BloqueC/config_pkg_sim.sv
+    foreach f [lsort [glob -nocomplain ../src/*.sv]] {
+        if {[file tail $f] ne "config_pkg.sv"} {
+            vlog -work work_top $f
+        }
+    }
+    vlog -work work_top BloqueC/tb_top.sv
+    vsim work_top.tb_top
+    onfinish stop
+    run -all
+    quit -sim
+} err]} {
+    echo "  FAIL en tb_top: $err"
+    incr total_errors
 }
 
 echo ""

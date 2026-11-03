@@ -33,7 +33,7 @@ assign btn_admin = ~KEY[1];
 assign btn_test = ~KEY[2];
 
 //Senales entre bloques
-logic tick_capture, tick_debounce, tick_display;
+logic tick_capture, tick_debounce;
 logic rst, adm, tst;
 logic finger_valid;
 logic [2:0] finger_symbol;
@@ -56,8 +56,7 @@ clk_enables u_clk_enables (
     .clk(clk),
     .reset(reset),
     .tick_capture(tick_capture),
-    .tick_debounce(tick_debounce),
-    .tick_display(tick_display)
+    .tick_debounce(tick_debounce)
 );
 
 debounce u_debounce (
@@ -205,17 +204,8 @@ buzzer_ctrl #(
     .buzzer_out(BUZZER)
 );
 
-//En VALID el display muestra la posicion de la puerta
-logic is_valid;
-logic [2:0] disp_state;
-assign is_valid = (state == S_VALID);
-assign disp_state = ({3{~is_valid}} & state)
-| ({3{is_valid & ~door_open_flag}} & S_CLOSED)
-| ({3{is_valid & door_open_flag}} & S_OPEN);
-
 //El display muestra la ultima captura y la mantiene hasta la siguiente,
 //asi el usuario alcanza a ver el tercer digito aunque la FSM limpie la ventana.
-//Los digitos se invierten para que el mas nuevo quede a la derecha (HEX1)
 logic shift, shift_d;
 logic [8:0] disp_window, disp_window_next;
 assign shift = tick_capture & finger_valid;
@@ -229,10 +219,10 @@ end
 
 display_ctrl u_display_ctrl (
     .reset(reset),
-    .state(disp_state),
+    .state(state),
     .mode(mode),
     .speed(speed),
-    .window({disp_window[2:0], disp_window[5:3], disp_window[8:6]}),
+    .window(disp_window),
     .door_open_flag(door_open_flag),
     .HEX0(HEX0),
     .HEX1(HEX1),

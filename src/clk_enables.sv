@@ -2,8 +2,7 @@ module clk_enables (
     input  logic clk,
     input  logic reset,
     output logic tick_capture,
-    output logic tick_debounce,
-    output logic tick_display
+    output logic tick_debounce
 );
 
 import config_pkg::*;
@@ -11,7 +10,7 @@ import config_pkg::*;
 // Anchuras de contador 
 
 localparam int CAP_BITS    = $clog2(CAPTURE_CYCLES);
-localparam int SHARED_BITS = $clog2(DEBOUNCE_CYCLES);   // debounce y display comparten período
+localparam int SHARED_BITS = $clog2(DEBOUNCE_CYCLES);   // tick de 1 ms, lo usan debounce y timer_travel
 
 // Contadores
 logic [CAP_BITS-1:0]    cap_cnt;
@@ -26,7 +25,6 @@ assign shared_is_max = (shared_cnt == SHARED_BITS'(DEBOUNCE_CYCLES - 1));
 // Ticks 
 assign tick_capture  = cap_is_max    & ~reset;
 assign tick_debounce = shared_is_max & ~reset;
-assign tick_display  = shared_is_max & ~reset;
 
 // Enables de conteo
 logic cap_en, shared_en;

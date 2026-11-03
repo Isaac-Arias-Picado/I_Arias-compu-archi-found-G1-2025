@@ -51,8 +51,8 @@ debe comprobar la correspondencia con la tarjeta. No incluye punto decimal.
 | 14 a 1F | Apagado | 1111111 |
 
 B y D se representan con minusculas para distinguirlas de 8 y 0.
-CHAR_O produce una o minuscula; CHAR_c produce una c minuscula.
-El codigo 1F puede utilizarse para apagar un HEX sin modificar config_pkg.
+El codigo 10 produce una o minuscula y el 11 una c minuscula.
+El codigo 1F se utiliza para apagar un HEX.
 
 ## Diseno estructural
 

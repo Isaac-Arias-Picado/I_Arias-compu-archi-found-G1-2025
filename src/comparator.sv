@@ -8,8 +8,6 @@ module comparator (
     output logic       match2
 );
 
-import config_pkg::*;
-
 // Igualdad bit a bit: XOR da 1 donde difieren; sin diferencias = iguales
 
 logic [8:0] diff1, diff2;

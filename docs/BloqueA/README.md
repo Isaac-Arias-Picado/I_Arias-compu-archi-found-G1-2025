@@ -20,7 +20,6 @@ Responsable: Isaac Arias Picado
 | `finger_valid`     | B, C | Indica que el dedo detectado es válido (ninguno o un solo bit).  |
 | `finger_symbol`    | B, C | Símbolo 0-5 del dedo estable.                                    |
 | `window[8:0]`      | B, C | Ventana de 3 símbolos para compararla con la contraseña.         |
-| `tick_display`     | D    | Pulso de 1 kHz para el refresco del display.                     |
 
 ### Entradas
 

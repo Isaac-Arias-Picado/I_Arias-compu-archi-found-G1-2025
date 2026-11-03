@@ -69,7 +69,7 @@ La velocidad normalizada es `round(s · 15 / 7)`: 0, 2, 4, 6, 9, B, D, F. En `AD
 
 ## 5. PWM y velocidades
 
-Duty = `s / 7`. Frecuencia PWM = 1 kHz.
+Duty = `s / 7`. Frecuencia PWM = 100 Hz.
 
 | `s` | Duty | `T(s)` |
 |---|---|---|
@@ -161,14 +161,14 @@ Una captura válida es `tick_capture` con `finger_valid`.
 | `REG_OK` | 1 kHz | 1 beep de 100 ms |
 | `VALID` | 1 kHz | 2 beeps de 100 ms |
 | `INVALID` | 500 Hz | 1 beep de 500 ms |
-| `OPENING` | 2 kHz | continuo mientras abre |
-| `CLOSING` | 1.5 kHz | continuo mientras cierra |
+| `OPENING` | 800 Hz | continuo mientras abre |
+| `CLOSING` | 600 Hz | continuo mientras cierra |
 
 ## 12. Paquete de configuración
 
 Archivo: `config_pkg.sv`. Único punto de cambio de tiempos, frecuencias, códigos y LUT de velocidades. Ningún otro archivo contiene números mágicos.
 
-Contenido: `CLK_FREQ_HZ`, `CAPTURE_TIME_S`, `DEBOUNCE_MS`, `PW_LEN`, `PW_DIGIT_BITS`, `PWM_FREQ_HZ`, `PWM_COUNTER_MAX`, `T_MAX_S`, `T_MAX_MS`, `TRAVEL_MS_1`–`TRAVEL_MS_7`, `TRAVEL_MS_MAX`, `TEST_SPEED`, `TEST_WAIT_MS`, frecuencias de buzzer, `DISPLAY_REFRESH_HZ`, `state_t`, `admin_mode_t`, `buzzer_event_t`.
+Contenido: `CLK_FREQ_HZ`, `CAPTURE_TIME_S`, `DEBOUNCE_MS`, `PWM_FREQ_HZ`, `T_MAX_S`, `T_MAX_MS`, `TRAVEL_MS_1`–`TRAVEL_MS_7`, `TRAVEL_MS_MAX`, `TEST_SPEED`, `TEST_WAIT_MS`, frecuencias y duraciones del buzzer, `state_t`, `admin_mode_t`, `buzzer_event_t`.
 
 ## 13. Módulos
 

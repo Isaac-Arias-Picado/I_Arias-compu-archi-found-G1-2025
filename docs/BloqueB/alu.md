@@ -29,7 +29,7 @@ Es lógica combinacional pura: no tiene reloj ni reset.
 ## Decisiones de diseño
 
 1. No existe operación nula. Un intento nunca empieza con 0, así que `op = 0` no llega a la ALU en uso normal. Si llegara, el resultado es 0 (velocidad 0, sin movimiento). Lo mismo con los códigos 6 y 7.
-2. Los códigos de operación (1 a 5) se definen dentro de `alu.sv`, porque `alu_op_t` del paquete numera de 0 a 4 y no coincide con el dígito. El bloque C debe conectar `window[8:6]` directo a `op`.
+2. Los códigos de operación (1 a 5) se definen dentro de `alu.sv`, porque coinciden directamente con el primer dígito del intento. El bloque C debe conectar `window[8:6]` directo a `op`.
 3. La rotación de 3 bits repetida 3 veces devuelve el mismo valor, por eso los giros son `B mod 3`.
 4. La multiplicación se arma con productos parciales y acarreo, sin el operador `*`. Suma y resta usan `+` y `-` descartando el acarreo, igual que el contador de `clk_enables`.
 5. El resultado se elige con máscaras de selección, sin `case`, `if` ni ternario.
