@@ -63,20 +63,23 @@ localparam logic [STAB_BITS-1:0] COUNT_ONE   = {{(STAB_BITS-1){1'b0}}, 1'b1};
 localparam logic [STAB_BITS-1:0] COUNT_ZERO  = {STAB_BITS{1'b0}};
 
 logic [STAB_BITS-1:0] count_next;
-assign count_next = reset ? COUNT_ZERO :
-                    cand_change ? COUNT_ONE :
-                    (cand_match & (count < DEBOUNCE_SAMPLES)) ? (count + 1'b1) :
-                    count;
+assign count_next =
+    ({STAB_BITS{reset}} & COUNT_ZERO) |
+    ({STAB_BITS{~reset & cand_change}} & COUNT_ONE) |
+    ({STAB_BITS{~reset & ~cand_change & cand_match & (count < DEBOUNCE_SAMPLES)}} & (count + 1'b1)) |
+    ({STAB_BITS{~reset & ~cand_change & ~(cand_match & (count < DEBOUNCE_SAMPLES))}} & count);
 
 logic [4:0] candidate_next;
-assign candidate_next = reset ? 5'b00000 :
-                        cand_change ? raw_sync :
-                        candidate;
+assign candidate_next =
+    ({5{reset}} & 5'b00000) |
+    ({5{~reset & cand_change}} & raw_sync) |
+    ({5{~reset & ~cand_change}} & candidate);
 
 logic [4:0] stable_next;
-assign stable_next = reset ? 5'b00000 :
-                     (cand_match & (count == (DEBOUNCE_SAMPLES - 1))) ? candidate :
-                     stable;
+assign stable_next =
+    ({5{reset}} & 5'b00000) |
+    ({5{~reset & cand_match & (count == (DEBOUNCE_SAMPLES - 1))}} & candidate) |
+    ({5{~reset & ~(cand_match & (count == (DEBOUNCE_SAMPLES - 1)))}} & stable);
 
 always_ff @(posedge clk) begin
     count     <= count_next;
