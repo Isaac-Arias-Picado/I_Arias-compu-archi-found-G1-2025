@@ -26,7 +26,7 @@ package config_pkg;
     parameter int DISPLAY_NUM_HEX    = 6;
 
     // PWM
-    parameter int PWM_FREQ_HZ        = 1000;                         // 1 kHz
+    parameter int PWM_FREQ_HZ        = 100;                          // 100 Hz
     parameter int PWM_COUNTER_MAX    = CLK_FREQ_HZ / PWM_FREQ_HZ;
     parameter int PWM_SPEED_BITS     = 3;                            // 0-7
     parameter int PWM_SPEED_MAX      = 7;
@@ -56,8 +56,8 @@ package config_pkg;
     parameter int BUZZER_REG_OK_HZ  = 1000;
     parameter int BUZZER_VALID_HZ   = 1000;
     parameter int BUZZER_INVALID_HZ = 500;
-    parameter int BUZZER_OPENING_HZ = 2000;
-    parameter int BUZZER_CLOSING_HZ = 1500;
+    parameter int BUZZER_OPENING_HZ = 800;
+    parameter int BUZZER_CLOSING_HZ = 600;
 
     // Semi-periodos precalculados 
     parameter int BUZZER_TEST_HALF    = CLK_FREQ_HZ / (2 * BUZZER_TEST_HZ);
