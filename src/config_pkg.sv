@@ -26,44 +26,38 @@ package config_pkg;
     parameter int DISPLAY_NUM_HEX    = 6;
 
     // PWM
-    parameter int PWM_FREQ_HZ        = 1000;                         // 1 kHz
+    parameter int PWM_FREQ_HZ        = 100;                          // 100 Hz
     parameter int PWM_COUNTER_MAX    = CLK_FREQ_HZ / PWM_FREQ_HZ;
     parameter int PWM_SPEED_BITS     = 3;                            // 0-7
     parameter int PWM_SPEED_MAX      = 7;
 
-    //  Viaje de puerta 
-    // T(s) = T_MAX_CYCLES * 7 / s  (s = 1..7)
-    // T(0) = 0 (sin movimiento)
-    parameter int T_MAX_S      = 4;                      // 4 s a 100 %
-    parameter int T_MAX_CYCLES = T_MAX_S * CLK_FREQ_HZ;
-
-    localparam int T_CYCLES_0 = 0;
-    localparam int T_CYCLES_1 = T_MAX_CYCLES * 7;
-    localparam int T_CYCLES_2 = T_MAX_CYCLES * 7 / 2;
-    localparam int T_CYCLES_3 = T_MAX_CYCLES * 7 / 3;
-    localparam int T_CYCLES_4 = T_MAX_CYCLES * 7 / 4;
-    localparam int T_CYCLES_5 = T_MAX_CYCLES * 7 / 5;
-    localparam int T_CYCLES_6 = T_MAX_CYCLES * 7 / 6;
-    localparam int T_CYCLES_7 = T_MAX_CYCLES;
-
-    // LUT indexable por speed[2:0].
-    localparam int TRAVEL_CYCLES [0:7] = '{
-        T_CYCLES_0, T_CYCLES_1, T_CYCLES_2, T_CYCLES_3,
-        T_CYCLES_4, T_CYCLES_5, T_CYCLES_6, T_CYCLES_7
-    };
+    // Viaje de puerta
+    // T(s) = T_MAX_MS * 7 / s  (s = 1..7), en milisegundos.
+    // El timer cuenta ticks de 1 ms, por eso los tiempos van en ms.
+    // T_MAX_S es provisional: se calibra midiendo la maqueta.
+    parameter int T_MAX_S       = 4;                  // 4 s a 100 %
+    parameter int T_MAX_MS      = T_MAX_S * 1000;
+    parameter int TRAVEL_MS_1   = T_MAX_MS * 7;       // 28000
+    parameter int TRAVEL_MS_2   = T_MAX_MS * 7 / 2;   // 14000
+    parameter int TRAVEL_MS_3   = T_MAX_MS * 7 / 3;   // 9333
+    parameter int TRAVEL_MS_4   = T_MAX_MS * 7 / 4;   // 7000
+    parameter int TRAVEL_MS_5   = T_MAX_MS * 7 / 5;   // 5600
+    parameter int TRAVEL_MS_6   = T_MAX_MS * 7 / 6;   // 4666
+    parameter int TRAVEL_MS_7   = T_MAX_MS;           // 4000
+    parameter int TRAVEL_MS_MAX = TRAVEL_MS_1;        // viaje mas largo, tope del contador
 
     // Test 
     parameter logic [2:0] TEST_SPEED    = 3'd4;   // ~50 %
     parameter int         TEST_WAIT_MS  = 1000;   // espera entre abrir y cerrar
-    parameter int         TEST_WAIT_CYCLES = (TEST_WAIT_MS * CLK_FREQ_HZ) / 1000;
+    parameter int         TEST_WAIT_CYCLES = (CLK_FREQ_HZ / 1000) * TEST_WAIT_MS;
 
     // Buzzer 
     parameter int BUZZER_TEST_HZ    = 1000;
     parameter int BUZZER_REG_OK_HZ  = 1000;
     parameter int BUZZER_VALID_HZ   = 1000;
     parameter int BUZZER_INVALID_HZ = 500;
-    parameter int BUZZER_OPENING_HZ = 2000;
-    parameter int BUZZER_CLOSING_HZ = 1500;
+    parameter int BUZZER_OPENING_HZ = 800;
+    parameter int BUZZER_CLOSING_HZ = 600;
 
     // Semi-periodos precalculados 
     parameter int BUZZER_TEST_HALF    = CLK_FREQ_HZ / (2 * BUZZER_TEST_HZ);
@@ -75,11 +69,11 @@ package config_pkg;
 
     // Duraciones y patrones
     parameter int BUZZER_BEEP_MS        = 100;
-    parameter int BUZZER_BEEP_CYCLES    = (BUZZER_BEEP_MS * CLK_FREQ_HZ) / 1000;
+    parameter int BUZZER_BEEP_CYCLES    = (CLK_FREQ_HZ / 1000) * BUZZER_BEEP_MS;
     parameter int BUZZER_INVALID_MS     = 500;
-    parameter int BUZZER_INVALID_CYCLES = (BUZZER_INVALID_MS * CLK_FREQ_HZ) / 1000;
+    parameter int BUZZER_INVALID_CYCLES = (CLK_FREQ_HZ / 1000) * BUZZER_INVALID_MS;
     parameter int BUZZER_GAP_MS         = 100;
-    parameter int BUZZER_GAP_CYCLES     = (BUZZER_GAP_MS * CLK_FREQ_HZ) / 1000;
+    parameter int BUZZER_GAP_CYCLES     = (CLK_FREQ_HZ / 1000) * BUZZER_GAP_MS;
 
     //  Codificacion de estados 
     typedef enum logic [2:0] {
@@ -89,16 +83,15 @@ package config_pkg;
         S_OPEN    = 3'd3,
         S_CLOSING = 3'd4,
         S_ADMIN   = 3'd5,
-        S_TEST    = 3'd6
+        S_TEST    = 3'd6,
+        S_VALID   = 3'd7
     } state_t;
 
     // Submodos de admin 
     typedef enum logic [2:0] {
-        M_NORMAL    = 3'd0,
-        M_REG_OPEN  = 3'd1,
-        M_REG_CLOSE = 3'd2,
-        M_DEL_OPEN  = 3'd3,
-        M_DEL_CLOSE = 3'd4
+        M_NORMAL = 3'd0,
+        M_SLOT1  = 3'd1,
+        M_SLOT2  = 3'd2
     } admin_mode_t;
 
     // Operaciones ALU 

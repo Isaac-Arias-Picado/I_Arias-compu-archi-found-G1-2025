@@ -34,6 +34,8 @@ quartus/*.esf
 quartus/*.jic
 quartus/*.ttf
 quartus/*.tdf
+quartus/*.qdf
+quartus/c5_pin_model_dump.txt
 
 # ===== ModelSim / Questa =====
 quartus/simulation/
