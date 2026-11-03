@@ -10,14 +10,12 @@ logic clk;
 logic reset;
 logic tick_capture;
 logic tick_debounce;
-logic tick_display;
 
 clk_enables dut (
     .clk(clk),
     .reset(reset),
     .tick_capture(tick_capture),
-    .tick_debounce(tick_debounce),
-    .tick_display(tick_display)
+    .tick_debounce(tick_debounce)
 );
 
 initial clk = 0;
@@ -26,18 +24,11 @@ always #(CLK_PERIOD/2.0) clk = ~clk;
 int errors = 0;
 int cyc = 0;
 
-always @(posedge clk) begin
-    if (tick_debounce !== tick_display) begin
-        $display("FAIL: tick_debounce != tick_display at time %0t", $time);
-        errors++;
-    end
-end
-
 initial begin
     reset = 1;
     repeat (5) @(posedge clk);
 
-    if (tick_capture | tick_debounce | tick_display) begin
+    if (tick_capture | tick_debounce) begin
         $display("FAIL [Test 1]: ticks activos durante reset");
         errors++;
     end else begin
@@ -56,11 +47,10 @@ initial begin
     end
 
     cyc = 0;
-    while (1) begin
+    do begin
         @(posedge clk);
         cyc++;
-        if (tick_debounce) break;
-    end
+    end while (!tick_debounce);
 
     if (cyc != DEBOUNCE_CYCLES) begin
         $display("FAIL [Test 3]: intervalo debounce = %0d, esperado %0d",

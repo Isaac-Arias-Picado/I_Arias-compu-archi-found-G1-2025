@@ -5,10 +5,7 @@ module alu (
     output logic [2:0] result
 );
 
-import config_pkg::*;
-
 // Códigos de operación = primer dígito del intento (1-5).
-// Propios de la ALU: no dependen de alu_op_t del paquete.
 // Cualquier otro código da resultado 0.
 
 localparam logic [2:0] OP_ADD  = 3'd1;

@@ -25,9 +25,14 @@ function automatic logic [6:0] pattern(input int code);
         5: pattern = 7'b0010010;
         6: pattern = 7'b0000010;
         7: pattern = 7'b1111000;
+        8: pattern = 7'b0000000;
+        9: pattern = 7'b0010000;
         10: pattern = 7'b0001000; // A
+        11: pattern = 7'b0000011; // b
         12: pattern = 7'b1000110; // C
+        13: pattern = 7'b0100001; // d
         14: pattern = 7'b0000110; // E
+        15: pattern = 7'b0001110; // F
         16: pattern = 7'b0100011; // o
         17: pattern = 7'b0100111; // c
         18: pattern = 7'b0101011; // n
@@ -36,9 +41,18 @@ function automatic logic [6:0] pattern(input int code);
     endcase
 endfunction
 
-function automatic logic [6:0] digit_pattern(input logic [2:0] digit);
-    if (digit <= 5) return pattern(int'(digit));
-    return 7'b1111111;
+// Velocidad normalizada esperada en HEX5: round(15*speed/7).
+function automatic int speed_hex(input logic [2:0] s);
+    case (s)
+        0: speed_hex = 0;
+        1: speed_hex = 2;
+        2: speed_hex = 4;
+        3: speed_hex = 6;
+        4: speed_hex = 9;
+        5: speed_hex = 11;
+        6: speed_hex = 13;
+        default: speed_hex = 15;
+    endcase
 endfunction
 
 task automatic check_display;
@@ -49,24 +63,19 @@ task automatic check_display;
         2: state_code = 16;
         3: state_code = 10;
         4: state_code = 17;
-        5,6: begin
+        // ADMIN, TEST y VALID muestran la posicion recordada de la puerta
+        default: begin
             if (door_open_flag) state_code = 10;
             else state_code = 12;
         end
-        default: state_code = 14;
     endcase
-    mode_code = 18;
     if (state == 6) mode_code = 19;
-    else if (state == 5) begin
-        case (mode)
-            0: mode_code = 18;
-            1,2,3,4: mode_code = int'(mode);
-            default: mode_code = 14;
-        endcase
-    end
-    expected = {pattern(int'(speed)), pattern(mode_code),
-                digit_pattern(window[2:0]), digit_pattern(window[5:3]),
-                digit_pattern(window[8:6]), pattern(state_code)};
+    else if (mode == 0) mode_code = 18;
+    else mode_code = int'(mode);
+    // HEX3 = digito mas viejo (window[8:6]), HEX1 = mas nuevo (window[2:0])
+    expected = {pattern(speed_hex(speed)), pattern(mode_code),
+                pattern(int'(window[8:6])), pattern(int'(window[5:3])),
+                pattern(int'(window[2:0])), pattern(state_code)};
     if (reset) expected = '1;
     #10;
     checks++;
@@ -93,7 +102,7 @@ initial begin
                     check_display();
                 end
     $display("INFO: 1024 combinaciones de controles comprobadas");
-    // Todas las ventanas: verifica posicion e invalidos 6/7 por digito.
+    // Todas las ventanas: verifica la posicion de cada digito.
     state = 3; mode = 0;
     for (int w = 0; w < 512; w++) begin
         window = 9'(w);

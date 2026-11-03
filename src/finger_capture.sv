@@ -8,8 +8,6 @@ module finger_capture (
     output logic [8:0] window
 );
 
-import config_pkg::*;
-
 // Control de desplazamiento
 
 logic clear_all;

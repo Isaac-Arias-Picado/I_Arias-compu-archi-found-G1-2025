@@ -13,8 +13,6 @@ module password_mem (
     output logic       valid2
 );
 
-import config_pkg::*;
-
 // Borrado global: reset o clear_all (pulso de la FSM)
 
 logic clear_any;

@@ -59,27 +59,30 @@ logic cand_change, cand_match;
 assign cand_change = tick_debounce & (raw_sync != candidate);
 assign cand_match  = tick_debounce & (raw_sync == candidate);
 
-localparam logic [STAB_BITS-1:0] COUNT_ONE   = {{(STAB_BITS-1){1'b0}}, 1'b1};
-localparam logic [STAB_BITS-1:0] COUNT_ZERO  = {STAB_BITS{1'b0}};
+localparam logic [STAB_BITS-1:0] COUNT_ONE = {{(STAB_BITS-1){1'b0}}, 1'b1};
+
+// Contador: 1 si cambia el candidato, +1 si se repite, se mantiene si no.
+// cand_change y cand_match nunca valen 1 a la vez. Reset deja todo en 0.
+logic c_inc, c_hold;
+assign c_inc  = cand_match & (count < DEBOUNCE_SAMPLES);
+assign c_hold = ~cand_change & ~c_inc;
 
 logic [STAB_BITS-1:0] count_next;
-assign count_next =
-    ({STAB_BITS{reset}} & COUNT_ZERO) |
-    ({STAB_BITS{~reset & cand_change}} & COUNT_ONE) |
-    ({STAB_BITS{~reset & ~cand_change & cand_match & (count < DEBOUNCE_SAMPLES)}} & (count + 1'b1)) |
-    ({STAB_BITS{~reset & ~cand_change & ~(cand_match & (count < DEBOUNCE_SAMPLES))}} & count);
+assign count_next = {STAB_BITS{~reset}} & (({STAB_BITS{cand_change}} & COUNT_ONE)
+    | ({STAB_BITS{c_inc}} & (count + 1'b1)) | ({STAB_BITS{c_hold}} & count));
 
+// Candidato: toma la entrada nueva cuando cambia
 logic [4:0] candidate_next;
-assign candidate_next =
-    ({5{reset}} & 5'b00000) |
-    ({5{~reset & cand_change}} & raw_sync) |
-    ({5{~reset & ~cand_change}} & candidate);
+assign candidate_next = {5{~reset}} & (({5{cand_change}} & raw_sync)
+    | ({5{~cand_change}} & candidate));
+
+// Estable: se carga cuando el candidato se repitio DEBOUNCE_SAMPLES veces
+logic stable_load;
+assign stable_load = cand_match & (count == (DEBOUNCE_SAMPLES - 1));
 
 logic [4:0] stable_next;
-assign stable_next =
-    ({5{reset}} & 5'b00000) |
-    ({5{~reset & cand_match & (count == (DEBOUNCE_SAMPLES - 1))}} & candidate) |
-    ({5{~reset & ~(cand_match & (count == (DEBOUNCE_SAMPLES - 1)))}} & stable);
+assign stable_next = {5{~reset}} & (({5{stable_load}} & candidate)
+    | ({5{~stable_load}} & stable));
 
 always_ff @(posedge clk) begin
     count     <= count_next;
@@ -96,7 +99,7 @@ assign popcount = {2'b00, stable[0]} + {2'b00, stable[1]}
 assign finger_valid = (popcount <= 3'd1);
 
 
-// Encoder estructural: one-hot (o cero) a simbolo 0-5=
+// Encoder estructural: one-hot (o cero) a simbolo 0-5
 assign finger_symbol[0] = stable[0] | stable[2] | stable[4];
 assign finger_symbol[1] = stable[1] | stable[2];
 assign finger_symbol[2] = stable[3] | stable[4];

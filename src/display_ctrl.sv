@@ -15,47 +15,51 @@ module display_ctrl (
     output logic [6:0] HEX5
 );
 
-logic special_state, admin_state, test_state;
+logic position_state, test_state;
 logic [4:0] state_char, mode_char;
+logic [3:0] speed_hex;
 logic [4:0] char0, char1, char2, char3, char4, char5;
-logic oldest_valid, middle_valid, newest_valid, mode_valid;
 
-assign admin_state = (state == 3'd5);
+// ADMIN, TEST y VALID no mueven la puerta: HEX0 muestra la posicion recordada.
 assign test_state = (state == 3'd6);
-assign special_state = admin_state | test_state;
+assign position_state = (state == 3'd5) | test_state | (state == 3'd7);
 
-// HEX0: E, C, o, A, c. En ADMIN/TEST muestra la posicion recordada.
+// HEX0: E, C, o, A, c.
 assign state_char =
-    ({5{(state == 3'd0) | (state == 3'd7)}} & 5'h0E) |
+    ({5{state == 3'd0}} & 5'h0E) |
     ({5{state == 3'd1}} & 5'h0C) |
     ({5{state == 3'd2}} & 5'h10) |
     ({5{state == 3'd3}} & 5'h0A) |
     ({5{state == 3'd4}} & 5'h11) |
-    ({5{special_state & ~door_open_flag}} & 5'h0C) |
-    ({5{special_state & door_open_flag}} & 5'h0A);
+    ({5{position_state & ~door_open_flag}} & 5'h0C) |
+    ({5{position_state & door_open_flag}} & 5'h0A);
 
-// HEX4: TEST tiene t; ADMIN tiene n/1/2/3/4; resto tiene n.
-assign mode_valid = (mode <= 3'd4);
+// HEX4: t en TEST, el espacio (1 o 2) en ADMIN y n en el resto.
+// mode solo es distinto de 0 dentro de ADMIN.
 assign mode_char =
     ({5{test_state}} & 5'h13) |
-    ({5{~special_state | (admin_state & (mode == 3'd0))}} & 5'h12) |
-    ({5{admin_state & mode_valid & (mode != 3'd0)}} & {2'b00, mode}) |
-    ({5{admin_state & ~mode_valid}} & 5'h0E);
+    ({5{~test_state & (mode == 3'd0)}} & 5'h12) |
+    ({5{~test_state & (mode != 3'd0)}} & {2'b00, mode});
 
-assign oldest_valid = (window[8:6] <= 3'd5);
-assign middle_valid = (window[5:3] <= 3'd5);
-assign newest_valid = (window[2:0] <= 3'd5);
+// HEX5: velocidad normalizada a 0-F, round(15*speed/7).
+assign speed_hex =
+    ({4{speed == 3'd1}} & 4'h2) |
+    ({4{speed == 3'd2}} & 4'h4) |
+    ({4{speed == 3'd3}} & 4'h6) |
+    ({4{speed == 3'd4}} & 4'h9) |
+    ({4{speed == 3'd5}} & 4'hB) |
+    ({4{speed == 3'd6}} & 4'hD) |
+    ({4{speed == 3'd7}} & 4'hF);
 
-// Reset selecciona 1F (apagado). Los digitos 6/7 tambien quedan apagados.
+// Digitos del intento en orden de lectura: el primero en HEX3, el ultimo en HEX1.
+// window[8:6] es el mas viejo y window[2:0] el mas nuevo.
+// Reset selecciona 1F (apagado).
 assign char0 = ({5{~reset}} & state_char) | {5{reset}};
-assign char1 = ({5{~reset & oldest_valid}} & {2'b00, window[8:6]}) |
-               {5{reset | ~oldest_valid}};
-assign char2 = ({5{~reset & middle_valid}} & {2'b00, window[5:3]}) |
-               {5{reset | ~middle_valid}};
-assign char3 = ({5{~reset & newest_valid}} & {2'b00, window[2:0]}) |
-               {5{reset | ~newest_valid}};
+assign char1 = ({5{~reset}} & {2'b00, window[2:0]}) | {5{reset}};
+assign char2 = ({5{~reset}} & {2'b00, window[5:3]}) | {5{reset}};
+assign char3 = ({5{~reset}} & {2'b00, window[8:6]}) | {5{reset}};
 assign char4 = ({5{~reset}} & mode_char) | {5{reset}};
-assign char5 = ({5{~reset}} & {2'b00, speed}) | {5{reset}};
+assign char5 = ({5{~reset}} & {1'b0, speed_hex}) | {5{reset}};
 
 seven_seg dec0 (.char_code(char0), .segments(HEX0));
 seven_seg dec1 (.char_code(char1), .segments(HEX1));

@@ -55,6 +55,24 @@ Variables del filtro:
 
 Con `count` = 20 el contador se satura: `raw_sync` igual a `candidate` no cambia nada. Así, `stable` se actualiza cuando se completan 20 muestras iguales seguidas.
 
+Ecuaciones, con multiplexores por máscaras (sin `if`, `case` ni ternarios):
+
+cand_change = tick_debounce ∧ (raw_sync ≠ candidate)
+
+cand_match = tick_debounce ∧ (raw_sync = candidate)
+
+c_inc = cand_match ∧ (count < DEBOUNCE_SAMPLES)
+
+c_hold = ¬cand_change ∧ ¬c_inc
+
+count_next = ¬reset ∧ (cand_change ∧ 1 ∨ c_inc ∧ (count + 1) ∨ c_hold ∧ count)
+
+candidate_next = ¬reset ∧ (cand_change ∧ raw_sync ∨ ¬cand_change ∧ candidate)
+
+stable_load = cand_match ∧ (count = DEBOUNCE_SAMPLES − 1)
+
+stable_next = ¬reset ∧ (stable_load ∧ candidate ∨ ¬stable_load ∧ stable)
+
 ## Validación y codificación
 
 Ecuaciones:
