@@ -60,7 +60,14 @@ initial begin
         $display("PASS [Test 3]: intervalo debounce correcto (%0d ciclos)", cyc);
     end
 
-    $display("INFO: esperando primer tick_capture (~%0d ciclos)...", CAPTURE_CYCLES);
+    //Para no simular 100 millones de ciclos, el contador de captura se
+    //adelanta a 20 ciclos del final. El pulso se sigue comparando con el
+    //valor real de CAPTURE_CYCLES.
+    @(negedge clk);
+    force dut.cap_cnt = CAPTURE_CYCLES - 20;
+    @(negedge clk);
+    release dut.cap_cnt;
+    $display("INFO: contador de captura adelantado a %0d", CAPTURE_CYCLES - 20);
     while (!tick_capture) @(posedge clk);
 
     if (dut.cap_cnt !== (CAPTURE_CYCLES - 1)) begin
