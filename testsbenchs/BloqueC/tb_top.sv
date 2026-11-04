@@ -10,13 +10,14 @@ import config_pkg::*;
 logic CLOCK_50;
 logic [3:0] KEY;
 logic [4:0] FINGER;
+logic [1:0] LIMIT;
 logic [1:0] MOTOR;
 logic BUZZER;
 logic [6:0] HEX0, HEX1, HEX2, HEX3, HEX4, HEX5;
 
 //DUT
 top dut (
-    .CLOCK_50(CLOCK_50), .KEY(KEY), .FINGER(FINGER),
+    .CLOCK_50(CLOCK_50), .KEY(KEY), .FINGER(FINGER), .LIMIT(LIMIT),
     .MOTOR(MOTOR), .BUZZER(BUZZER),
     .HEX0(HEX0), .HEX1(HEX1), .HEX2(HEX2),
     .HEX3(HEX3), .HEX4(HEX4), .HEX5(HEX5)
@@ -80,6 +81,7 @@ int pwm_high;
 initial begin
     KEY = 4'b1111;
     FINGER = 0;
+    LIMIT = 2'b11;   //switches sin presionar
     repeat (100) @(posedge CLOCK_50);
 
     //Test 1: encendido
@@ -122,10 +124,31 @@ initial begin
     repeat (CAPTURE_CYCLES + 500) @(posedge CLOCK_50);
     check(dut.state == S_OPEN, "Test 4b: una contrasena incorrecta no cambia nada");
 
-    //Test 5: reset
+    //Test 5: el switch de cerrado detiene el motor antes del temporizador
+    enter(1, 2, 1);
+    wait_state(S_CLOSING, 30000);
+    repeat (500) @(posedge CLOCK_50);
+    check(dut.state == S_CLOSING, "Test 5a: sin switch, la puerta sigue cerrando");
+    LIMIT[0] = 1'b0;
+    repeat (5) @(posedge CLOCK_50);
+    check(dut.state == S_CLOSED && MOTOR == 2'b00 && !dut.door_open_flag,
+          "Test 5b: el switch de cerrado pasa a CLOSED y apaga el motor");
+    LIMIT[0] = 1'b1;
+
+    //Test 6: el switch de abierto detiene la apertura
+    enter(1, 2, 1);
+    wait_state(S_OPENING, 30000);
+    repeat (500) @(posedge CLOCK_50);
+    LIMIT[1] = 1'b0;
+    repeat (5) @(posedge CLOCK_50);
+    check(dut.state == S_OPEN && MOTOR == 2'b00 && dut.door_open_flag,
+          "Test 6: el switch de abierto pasa a OPEN y apaga el motor");
+    LIMIT[1] = 1'b1;
+
+    //Test 7: reset
     press(0);
     check(dut.state == S_ERROR && !dut.valid1,
-          "Test 5: KEY0 borra las contrasenas y pasa a ERROR");
+          "Test 7: KEY0 borra las contrasenas y pasa a ERROR");
 
     $display("Simulacion terminada. Errores: %0d", errors);
     $finish;

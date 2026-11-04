@@ -15,7 +15,7 @@ package config_pkg;
     parameter int DEBOUNCE_SAMPLES  = (DEBOUNCE_MS * DEBOUNCE_TICK_HZ) / 1000;  // 20
 
     // PWM
-    parameter int PWM_FREQ_HZ        = 100;                          // 100 Hz
+    parameter int PWM_FREQ_HZ        = 10;                          // 10 Hz
 
     // Viaje de puerta
     // T(s) = T_MAX_MS * 7 / s  (s = 1..7), en milisegundos.

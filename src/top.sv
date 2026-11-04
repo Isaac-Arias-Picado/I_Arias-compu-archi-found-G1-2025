@@ -2,6 +2,7 @@ module top (
     input logic CLOCK_50,
     input logic [3:0] KEY,
     input logic [4:0] FINGER,
+    input logic [1:0] LIMIT,
     output logic [1:0] MOTOR,
     output logic BUZZER,
     output logic [6:0] HEX0,
@@ -42,7 +43,7 @@ logic ready;
 logic [8:0] pass1, pass2;
 logic valid1, valid2, match1, match2;
 logic [2:0] alu_result;
-logic wait_done, travel_done;
+logic wait_done, travel_done, travel_end;
 logic [2:0] state, mode, speed;
 logic door_open_flag;
 logic [1:0] motor_dir;
@@ -138,6 +139,22 @@ timer_travel u_timer_travel (
     .travel_done(travel_done)
 );
 
+//Fines de carrera (activos en bajo): LIMIT[1] puerta abierta, LIMIT[0] cerrada.
+//Se sincronizan con 2 FF. El recorrido termina con el switch del lado hacia
+//el que se mueve el motor, o con el temporizador si el switch no se acciona.
+logic [1:0] lim_ff1, lim_ff2;
+
+always_ff @(posedge clk) begin
+    lim_ff1 <= LIMIT;
+    lim_ff2 <= lim_ff1;
+end
+
+logic lim_open, lim_closed;
+assign lim_open = ~lim_ff2[1];
+assign lim_closed = ~lim_ff2[0];
+assign travel_end = travel_done | (motor_dir[1] & lim_open)
+| (motor_dir[0] & lim_closed);
+
 fsm_main u_fsm_main (
     .clk(clk),
     .reset(reset),
@@ -151,7 +168,7 @@ fsm_main u_fsm_main (
     .valid2(valid2),
     .alu_result(alu_result),
     .wait_done(wait_done),
-    .travel_done(travel_done),
+    .travel_done(travel_end),
     .state(state),
     .mode(mode),
     .door_open_flag(door_open_flag),
