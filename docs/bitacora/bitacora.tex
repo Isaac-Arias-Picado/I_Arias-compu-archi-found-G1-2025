@@ -659,4 +659,102 @@ Los dieciséis bancos de prueba terminaron sin errores. Se actualizaron el del g
 
 En Quartus la compilación terminó sin errores, con 560 celdas lógicas y un margen de 10.85 ns en el peor caso de tiempos. El diseño usa seis celdas menos y tiene más margen que antes, lo que confirma que lo eliminado no cumplía ninguna función. Los cambios se integraron a \texttt{development} con un pull request, y en la propuesta de investigación se actualizaron los resultados de la síntesis y se marcaron como resueltos los pendientes del filtro de entradas y de la normalización del display.
 
+
+\entrada{3 de noviembre de 2026}{Jose Andrés Chavarría Gamboa}
+
+\subsubsection*{Tareas realizadas}
+
+Se diseñó y se empezó a construir la maqueta de la puerta, se midió la velocidad real del motor para dimensionarla y se evaluó agregar sensores de final de carrera. También se prepararon las consultas al profesor sobre los puntos del enunciado que admiten más de una interpretación.
+
+\subsubsection*{Diseño de la maqueta}
+
+Se compararon dos mecanismos, una puerta levadiza que sube enrollando un cordón y una puerta corrediza movida por un lazo cerrado de hilo. Se escogió la corrediza porque en la levadiza el motor queda trabado arriba si el tiempo de recorrido es más largo de lo necesario, mientras que en el lazo el hilo patina en los topes y el motor no se fuerza.
+
+El lazo va del carrete del motor a una polea libre en el otro extremo, y el portón se amarra a uno de sus tramos. El portón se desliza entre dos guías pegadas al piso de la maqueta, frente a una pared vertical que sostiene el motor y la polea. La pared tiene un hueco que el portón tapa cuando está cerrado.
+
+\subsubsection*{Dimensionamiento}
+
+Conectado directo a la fuente, el motor dio unas 4 vueltas por segundo con 5 V y unas 5 con 6 V, bastante más que lo indicado en la hoja de datos. Con un carrete de 1 cm, el hilo avanza unos 3.77 cm por vuelta contando su grosor, así que el recorrido se escogió para que la velocidad máxima no fuera demasiado brusca.
+
+\begin{align*}
+v &\approx 3.77\ \text{cm} \cdot 5\ \text{vueltas/s} \approx 18.9\ \text{cm/s} \\
+t &= \frac{20\ \text{cm}}{18.9\ \text{cm/s}} \approx 1.1\ \text{s}
+\end{align*}
+
+Para que el portón tape por completo el hueco al cerrar y lo deje libre al abrir, su ancho debe ser igual al recorrido. Con 20 cm de portón y de recorrido, más el espacio del motor y la polea, la maqueta quedó de 48 cm de largo, con un piso de 48 × 12 cm, una pared de 48 × 21 cm con un hueco de 19 × 10 cm y un portón de 20 × 12 cm.
+
+\subsubsection*{Fines de carrera}
+
+Se evaluó detectar la llegada a cada tope con microswitches de palanca, que son momentáneos y vuelven solos al soltarse. Se agregaron al módulo superior dos entradas, una por tope, activas en bajo y sincronizadas con dos flip-flops. El recorrido termina con el temporizador o con el switch del lado hacia el que se mueve el motor, de modo que el switch del tope contrario se ignora aunque siga presionado al arrancar.
+
+\begin{align*}
+travel\_end = travel\_done \lor (motor\_dir_1 \land lim\_open) \lor (motor\_dir_0 \land lim\_closed)
+\end{align*}
+
+Esta señal entra a la máquina de estados en lugar de la del temporizador, así que la máquina no se modificó. El temporizador queda como respaldo si un switch no se acciona. Al banco del sistema completo se le agregaron pruebas en las que el switch detiene la apertura y el cierre antes de que termine el tiempo, y todos los bancos terminaron sin errores.
+
+\entrada{4 de noviembre de 2026}{Jose Andrés Chavarría Gamboa}
+
+\subsubsection*{Tareas realizadas}
+
+Se terminó la maqueta, se ajustó la frecuencia del PWM para que la puerta se moviera en todas las velocidades, se reemplazaron los microswitches por contactos y se preparó la ejecución de las simulaciones para la defensa.
+
+\subsubsection*{Montaje del mecanismo}
+
+La polea libre de cartón no giraba sobre su eje, por lo que el hilo se arrastraba sobre ella. Al darle más vueltas al hilo en el carrete del motor para aumentar el agarre, la fuerza se concentraba en la polea trabada y terminó rompiendo el carrete. Se volvió a un lazo con pocas vueltas y la tensión mínima para que el hilo no colgara, y el portón se unió al lazo con una pestaña pegada al hilo. Además se reforzó el apoyo del motor por el frente, que es donde llega el jalón del hilo.
+
+\subsubsection*{Frecuencia del PWM}
+
+Con la carga real del portón, la velocidad 1 no lograba mover la puerta a 100 Hz, y la velocidad 2 apenas hacía vibrar el motor. Se bajó la frecuencia por pasos y en cada uno se probó la velocidad mínima. A 50 Hz el motor empezaba a girar, pero sin fuerza para arrastrar el portón, a 30 Hz lo movía con dificultad y a 20 Hz abría y cerraba en todas las velocidades. Se dejó en 10 Hz para tener más margen en la velocidad mínima, porque los tirones solo se notan un poco en las dos velocidades más bajas.
+
+\begin{align*}
+N &= \frac{50\,000\,000}{10} = 5\,000\,000 \text{ ciclos} \\
+t_{alto}(1) &= \frac{1}{7} \cdot \frac{1}{10\ \text{Hz}} \approx 14.3\ \text{ms}
+\end{align*}
+
+Al bajar la frecuencia el ciclo de trabajo de cada velocidad no cambia, solo la duración de cada pulso. Con pulsos más largos el motor recibe el voltaje completo el tiempo suficiente para vencer la fricción estática del portón.
+
+\subsubsection*{Contactos de final de carrera}
+
+En la maqueta el portón no logró accionar los microswitches, ni siquiera en la velocidad máxima ni alargando la palanca, porque el hilo patina antes de alcanzar la fuerza que pide el resorte del switch. Se reemplazaron por contactos que no necesitan fuerza, dos puntas metálicas en cada tope, una conectada al pin de la FPGA y la otra a tierra, que el portón une con una pieza metálica al llegar.
+
+Los contactos casi no respondían con la resistencia de 1 k$\Omega$ hacia 3.3 V que se había previsto para los microswitches. Un contacto de este tipo tiene una resistencia de cientos de ohmios o más, y con un pull-up tan bajo el voltaje del pin no baja del umbral de la entrada.
+
+\begin{align*}
+V_{pin} &= 3.3 \cdot \frac{R_c}{R_{pu} + R_c} \\
+R_{pu} = 1\ \text{k}\Omega,\ R_c = 1\ \text{k}\Omega &\Rightarrow V_{pin} \approx 1.65\ \text{V}
+\end{align*}
+
+Por eso se dejó solo la resistencia interna de la FPGA, de unos 25 k$\Omega$, activada en el archivo de restricciones, con la que basta un roce del contacto para leer un cero.
+
+\subsubsection*{Simulaciones}
+
+Se verificó que el script que corre todos los bancos funciona en Questa. El banco del generador de habilitaciones esperaba los 100 millones de ciclos de la primera captura, y tardaba demasiado para mostrarlo en la defensa. Se modificó para adelantar el contador de captura a veinte ciclos del final con una asignación forzada, de modo que se sigue comprobando el pulso contra el valor real de la constante y la prueba termina en menos de un segundo. Para ver las formas de onda se carga cada banco con acceso a las señales internas, porque la optimización por defecto de Questa las elimina.
+
+\subsubsection*{Tiempos de recorrido}
+
+Con la maqueta terminada se cronometró un recorrido por velocidad, desde que arranca el motor hasta que el contacto lo detiene, guiándose por el tono del buzzer. Para cada velocidad se grabó una contraseña de suma con el resultado correspondiente.
+
+\begin{center}
+\begin{tabular}{@{}crr@{}}
+\toprule
+Velocidad & $T(s)$ programado (s) & Medido (s)\\
+\midrule
+1 & 28.00 & 4.27\\
+2 & 14.00 & 1.93\\
+3 & 9.33 & 1.51\\
+4 & 7.00 & 1.02\\
+5 & 5.60 & 0.67\\
+6 & 4.67 & 0.47\\
+7 & 4.00 & 0.35\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+En todas las velocidades el contacto cortó el movimiento mucho antes que el temporizador, que queda entre 6 y 11 veces por encima del recorrido real y funciona solo como respaldo. Los tiempos no bajan exactamente como $1/s$, porque en las velocidades bajas parte de cada pulso se gasta en vencer la fricción del mecanismo, y de la velocidad 5 en adelante son tan cortos que el error del cronómetro manual pesa bastante.
+
+\subsubsection*{Verificación}
+
+Con la frecuencia de 10 Hz y los fines de carrera, la compilación terminó sin errores, con 576 celdas lógicas, 12 pines de entrada y un margen de 8.99 ns en el peor caso de tiempos. Quartus reconoce diez cadenas de sincronización, las ocho de las entradas anteriores y las dos de los fines de carrera. En la maqueta la puerta abre y cierra en las siete velocidades, y en el display la velocidad aparece normalizada entre 0 y F.
+
 \end{document}

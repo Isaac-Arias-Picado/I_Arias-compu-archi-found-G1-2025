@@ -2,6 +2,7 @@
 flowchart LR
     KEY[/KEY 2:0/]
     FINGER[/FINGER 4:0/]
+    LIMIT[/LIMIT 1:0<br/>fines de carrera/]
 
     subgraph BA[Bloque A: sensado y captura]
         CE[clk_enables]
@@ -29,6 +30,7 @@ flowchart LR
     end
 
     DLAT[top: copia del último intento<br/>para el display]
+    LEND[top: fin de recorrido<br/>temporizador o switch]
     POR[top: CLOCK_50 y reset de encendido<br/>van a todos los módulos]
 
     MOTOR[\MOTOR 1:0\]
@@ -59,7 +61,11 @@ flowchart LR
     CMP -->|match1, match2| FSM
     ALU -->|alu_result| FSM
     AC -->|ready| FSM
-    TT -->|wait_done, travel_done| FSM
+    TT -->|wait_done| FSM
+    TT -->|travel_done| LEND
+    LIMIT -->|sincronizados| LEND
+    FSM -->|motor_dir| LEND
+    LEND -->|travel_end| FSM
 
     FSM -->|wr1, wr2, del1, del2, clear_all| PM
     FSM -->|clear_capture| FC
