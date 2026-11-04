@@ -1,3 +1,4 @@
+%%{init: {"htmlLabels": false, "flowchart": {"htmlLabels": false}} }%%
 flowchart LR
     U([Usuario])
 
@@ -33,6 +34,7 @@ flowchart LR
     T[Transistor 2N3904]
     BZ[Buzzer]
     P[Puerta]
+    SW[Fines de carrera<br/>contactos en los topes]
 
     U -->|dedos sobre los sensores| L
     U -->|presiona| K
@@ -42,5 +44,7 @@ flowchart LR
     D -->|BUZZER| T --> BZ
     D -->|MOTOR 1:0 con PWM| O
     M --> P
+    P -.->|toca al llegar| SW
+    SW -->|LIMIT 1:0| C
     HEX -.->|lo ve| U
     BZ -.->|lo escucha| U
