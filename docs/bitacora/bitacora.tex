@@ -731,6 +731,28 @@ Por eso se dejó solo la resistencia interna de la FPGA, de unos 25 k$\Omega$, a
 
 Se verificó que el script que corre todos los bancos funciona en Questa. El banco del generador de habilitaciones esperaba los 100 millones de ciclos de la primera captura, y tardaba demasiado para mostrarlo en la defensa. Se modificó para adelantar el contador de captura a veinte ciclos del final con una asignación forzada, de modo que se sigue comprobando el pulso contra el valor real de la constante y la prueba termina en menos de un segundo. Para ver las formas de onda se carga cada banco con acceso a las señales internas, porque la optimización por defecto de Questa las elimina.
 
+\subsubsection*{Tiempos de recorrido}
+
+Con la maqueta terminada se cronometró un recorrido por velocidad, desde que arranca el motor hasta que el contacto lo detiene, guiándose por el tono del buzzer. Para cada velocidad se grabó una contraseña de suma con el resultado correspondiente.
+
+\begin{center}
+\begin{tabular}{@{}crr@{}}
+\toprule
+Velocidad & $T(s)$ programado (s) & Medido (s)\\
+\midrule
+1 & 28.00 & 4.27\\
+2 & 14.00 & 1.93\\
+3 & 9.33 & 1.51\\
+4 & 7.00 & 1.02\\
+5 & 5.60 & 0.67\\
+6 & 4.67 & 0.47\\
+7 & 4.00 & 0.35\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+En todas las velocidades el contacto cortó el movimiento mucho antes que el temporizador, que queda entre 6 y 11 veces por encima del recorrido real y funciona solo como respaldo. Los tiempos no bajan exactamente como $1/s$, porque en las velocidades bajas parte de cada pulso se gasta en vencer la fricción del mecanismo, y de la velocidad 5 en adelante son tan cortos que el error del cronómetro manual pesa bastante.
+
 \subsubsection*{Verificación}
 
 Con la frecuencia de 10 Hz y los fines de carrera, la compilación terminó sin errores, con 576 celdas lógicas, 12 pines de entrada y un margen de 8.99 ns en el peor caso de tiempos. Quartus reconoce diez cadenas de sincronización, las ocho de las entradas anteriores y las dos de los fines de carrera. En la maqueta la puerta abre y cierra en las siete velocidades, y en el display la velocidad aparece normalizada entre 0 y F.

@@ -873,15 +873,39 @@ detuvo el motor antes de que terminara el tiempo
 programado. Los contactos se comprobaron también con el
 motor detenido, en cuyo caso no producen ningún cambio.
 
+\textbf{Tiempo de recorrido con el portón.} Se cronometró un
+recorrido por nivel, desde que arranca el motor hasta que
+el contacto lo detiene, usando el tono del buzzer como
+referencia.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}crrr@{}}
+\toprule
+$s$ & $T(s)$ programado (s) & Medido (s) & $T(s)/t$\\
+\midrule
+1 & 28.00 & 4.27 & 6.6\\
+2 & 14.00 & 1.93 & 7.3\\
+3 & 9.33 & 1.51 & 6.2\\
+4 & 7.00 & 1.02 & 6.9\\
+5 & 5.60 & 0.67 & 8.4\\
+6 & 4.67 & 0.47 & 9.9\\
+7 & 4.00 & 0.35 & 11.4\\
+\bottomrule
+\end{tabular}
+\caption{Tiempo de recorrido del portón en la maqueta.}
+\label{tab:recorrido}
+\end{table}
+
 \subsection{Datos físicos pendientes}
 
-No se cronometraron los recorridos con el portón acoplado.
-Para calibrar $T(s)$ como respaldo de los contactos se
-propone registrar, para cada nivel no nulo, al menos
-cinco tiempos de apertura y cinco de cierre, y ajustar
-los tiempos de referencia con un margen cercano al 10 \%.
-Para cada conjunto de $n$ mediciones se calcularán
-el tiempo promedio y la desviación estándar:
+Los recorridos se midieron una sola vez por nivel. Para
+calibrar $T(s)$ como respaldo de los contactos se propone
+registrar, para cada nivel no nulo, al menos cinco tiempos
+de apertura y cinco de cierre, y ajustar los tiempos de
+referencia con un margen cercano al 10 \%. Para cada
+conjunto de $n$ mediciones se calcularán el tiempo
+promedio y la desviación estándar:
 
 \begin{equation}
 \overline{t}=\frac{1}{n}\sum_{i=1}^{n}t_i,
@@ -998,11 +1022,25 @@ manual.
 
 Este resultado valida el temporizador, pero no la
 duración adecuada del recorrido. En la maqueta el portón
-llega a cada tope antes de que termine $T(s)$ y el
-contacto corta el movimiento, mientras el hilo patina sin
-forzar el motor si un contacto falla. Por eso los tiempos
-actuales funcionan como respaldo, aunque no se hayan
-calibrado con la puerta real.
+llega a cada tope mucho antes de que termine $T(s)$
+(tabla~\ref{tab:recorrido}). El tiempo programado es entre
+6 y 11 veces el recorrido real, de modo que en todos los
+niveles es el contacto el que corta el movimiento. Si un
+contacto falla, el hilo patina en el tope sin forzar el
+motor hasta que termina $T(s)$, por lo que los tiempos
+actuales sirven como respaldo aunque sean holgados.
+
+El recorrido no baja exactamente como $1/s$. El producto
+$s\,t$ ronda 4 s en los niveles bajos y cae a 2.5 s en el
+nivel 7, es decir, los niveles altos mueven el portón más
+rápido de lo que indica su ciclo de trabajo. Es coherente
+con lo observado al ajustar la frecuencia, porque parte de
+cada pulso se gasta en vencer la fricción del mecanismo, y
+esa pérdida pesa más en los niveles bajos. Además, en los
+niveles 5 a 7 los tiempos son menores a un segundo y
+quedan cerca del error de unos 0.3 s que mostró el
+cronómetro manual en la tabla~\ref{tab:timer}, por lo que
+esos valores son solo aproximados.
 
 \subsection{Interpretación de las pruebas del display}
 
@@ -1116,12 +1154,13 @@ La maqueta comprobó además la apertura y el cierre en
 las siete velocidades y el corte del movimiento con los
 contactos de final de carrera.
 
-Permanece pendiente la calibración de $T(s)$. Los tiempos
-se validaron como temporización, pero no se cronometraron
-los recorridos con el portón acoplado, de modo que hoy
-funcionan solo como respaldo de los contactos. Las
-mediciones eléctricas se hicieron una sola vez por nivel
-y con el motor sin carga, y la confiabilidad de los
+Permanece pendiente la calibración de $T(s)$. Los
+recorridos con el portón se midieron una sola vez por
+nivel y con cronómetro manual, y los tiempos programados
+quedan muy por encima de ellos, de modo que hoy funcionan
+solo como respaldo de los contactos. Las mediciones
+eléctricas se hicieron también una sola vez por nivel y
+con el motor sin carga, y la confiabilidad de los
 contactos frente a polvo o desgaste no se evaluó.
 
 % ============================================================
