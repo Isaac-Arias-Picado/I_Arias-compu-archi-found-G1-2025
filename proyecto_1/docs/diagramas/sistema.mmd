@@ -1,0 +1,50 @@
+%%{init: {"htmlLabels": false, "flowchart": {"htmlLabels": false}} }%%
+flowchart LR
+    U([Usuario])
+
+    subgraph SENS[Entrada de la contraseña]
+        L[5 fotorresistencias<br/>con divisores de tensión]
+        ST[74HC14<br/>Schmitt trigger]
+        L --> ST
+    end
+
+    K[Botones KEY0, KEY1, KEY2<br/>reset, admin, prueba]
+
+    subgraph FPGA[FPGA DE10-Standard]
+        A[Bloque A<br/>Sensado y captura]
+        B[Bloque B<br/>Datos: memoria, comparador, ALU]
+        C[Bloque C<br/>Control: FSM principal]
+        D[Bloque D<br/>Salidas: PWM, buzzer, display]
+        A --> B
+        A --> C
+        B --> C
+        C --> D
+    end
+
+    subgraph POT[Etapa de potencia]
+        FM[Fuente del motor]
+        O[2 optoacopladores PC817]
+        H[Puente H]
+        M[Motor DC]
+        O --> H --> M
+        FM --> H
+    end
+
+    HEX[Displays HEX0 a HEX5]
+    T[Transistor 2N3904]
+    BZ[Buzzer]
+    P[Puerta]
+    SW[Fines de carrera<br/>contactos en los topes]
+
+    U -->|dedos sobre los sensores| L
+    U -->|presiona| K
+    ST -->|FINGER 4:0| A
+    K --> A
+    D -->|segmentos| HEX
+    D -->|BUZZER| T --> BZ
+    D -->|MOTOR 1:0 con PWM| O
+    M --> P
+    P -.->|toca al llegar| SW
+    SW -->|LIMIT 1:0| C
+    HEX -.->|lo ve| U
+    BZ -.->|lo escucha| U

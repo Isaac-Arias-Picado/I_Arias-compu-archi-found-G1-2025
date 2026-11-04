@@ -1,0 +1,84 @@
+%%{init: {"htmlLabels": false, "flowchart": {"defaultRenderer": "elk", "htmlLabels": false}} }%%
+flowchart LR
+    KEY[/KEY 2:0/]
+    FINGER[/FINGER 4:0/]
+    LIMIT[/LIMIT 1:0<br/>fines de carrera/]
+
+    subgraph BA[Bloque A: sensado y captura]
+        CE[clk_enables]
+        DB[debounce]
+        FC[finger_capture]
+    end
+
+    subgraph BB[Bloque B: datos]
+        ALU[alu]
+        PM[password_mem]
+        CMP[comparator]
+    end
+
+    subgraph BC[Bloque C: control]
+        AC[attempt_ctrl]
+        TT[timer_travel]
+        FSM[fsm_main]
+    end
+
+    subgraph BD[Bloque D: salidas]
+        PWM[pwm]
+        MC[motor_ctrl]
+        BZ[buzzer_ctrl]
+        DC[display_ctrl<br/>6 seven_seg]
+    end
+
+    DLAT[top: copia del último intento<br/>para el display]
+    LEND[top: fin de recorrido<br/>temporizador o switch]
+    POR[top: CLOCK_50 y reset de encendido<br/>van a todos los módulos]
+
+    MOTOR[\MOTOR 1:0\]
+    BUZZER[\BUZZER\]
+    HEX[\HEX0 a HEX5\]
+
+    KEY -->|invertidos| DB
+    FINGER --> DB
+
+    CE -->|tick_debounce| DB
+    CE -->|tick_capture| FC
+    CE -->|tick_capture| AC
+    CE -->|tick_ms| TT
+
+    DB -->|finger_valid, finger_symbol| FC
+    DB -->|finger_valid, finger_symbol| AC
+    DB -->|rst, adm, tst| FSM
+
+    FC -->|window 8:0| ALU
+    FC -->|window 8:0| PM
+    FC -->|window 8:0| CMP
+    FC -->|window 8:0| DLAT
+    CE -->|tick_capture| DLAT
+    DB -->|finger_valid| DLAT
+
+    PM -->|pass1, pass2, valid1, valid2| CMP
+    PM -->|valid1, valid2| FSM
+    CMP -->|match1, match2| FSM
+    ALU -->|alu_result| FSM
+    AC -->|ready| FSM
+    TT -->|wait_done| FSM
+    TT -->|travel_done| LEND
+    LIMIT -->|sincronizados| LEND
+    FSM -->|motor_dir| LEND
+    LEND -->|travel_end| FSM
+
+    FSM -->|wr1, wr2, del1, del2, clear_all| PM
+    FSM -->|clear_capture| FC
+    FSM -->|clear_capture| AC
+    FSM -->|timer_start, speed| TT
+
+    FSM -->|speed| PWM
+    PWM -->|pwm_out| MC
+    FSM -->|motor_dir| MC
+    FSM -->|bz_code, bz_start| BZ
+    FSM -->|state, mode, speed, door_open_flag| DC
+    DLAT --> DC
+
+    MC --> MOTOR
+    BZ --> BUZZER
+    DC --> HEX
