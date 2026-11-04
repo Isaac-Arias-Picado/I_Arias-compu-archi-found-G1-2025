@@ -589,7 +589,7 @@ Se hizo en Mermaid porque el diagrama se escribe como texto, de modo que puede g
 
 \subsubsection*{Tareas realizadas}
 
-Se subió el diagrama general a la rama de documentación y se hicieron en la FPGA las mediciones físicas para la propuesta de investigación. Durante las pruebas se cambió el motor, se bajó la frecuencia del PWM, se ajustaron los tonos del buzzer y se corrigió el orden de los dígitos en el display. Al final se tomaron fotografías del montaje, se actualizó la propuesta y se abrió el pull request del Bloque C hacia \texttt{development}.
+Se subió el diagrama general a la rama de documentación y se hicieron en la FPGA las mediciones físicas para la propuesta de investigación. Durante las pruebas se cambió el motor, se bajó la frecuencia del PWM, se ajustaron los tonos del buzzer y se corrigió el orden de los dígitos en el display. Después se tomaron fotografías del montaje, se actualizó la propuesta y se abrió el pull request del Bloque C hacia \texttt{development}. También se elaboró el diagrama interno de la FPGA y se revisó todo el código del repositorio para eliminar lo que no tenía uso y cerrar los pendientes del enunciado.
 
 \subsubsection*{Condiciones de las pruebas}
 
@@ -628,6 +628,35 @@ En el display los tres dígitos del intento aparecían al revés, con el primero
 
 Con todos los cambios se volvió a compilar en Quartus sin errores, con 566 celdas lógicas y un margen de 9.76 ns en el peor caso de tiempos. En la FPGA se recorrieron todos los estados y se fotografió el display en cada uno, error al encender, administración, intento aceptado, apertura, puerta abierta, cierre y prueba. También se fotografiaron el montaje completo, los sensores, el buzzer y la etapa de potencia.
 
-Con estos datos se actualizó la propuesta de investigación, con la etapa física, las tablas de mediciones, la simulación del PWM a 100 Hz y el análisis del cambio de frecuencia. Queda pendiente construir la maqueta de la puerta para medir el recorrido real y ajustar los tiempos de cada velocidad.
+Con estos datos se actualizó la propuesta de investigación, con la etapa física, las tablas de mediciones, la simulación del PWM a 100 Hz y el análisis del cambio de frecuencia.
+
+\subsubsection*{Diagrama interno de la FPGA}
+
+El enunciado pide un diagrama general de la FPGA diseñado por el grupo, y aclara que no es válido el que genera el software. Se hizo en Mermaid a partir del módulo \texttt{top}, que define todo lo que se implementa en la tarjeta. Sus puertos son las entradas y salidas físicas, y sus instancias son los módulos del diseño. El diagrama agrupa los módulos en los cuatro bloques y marca en cada flecha las señales que conectan un módulo con otro. El reloj y el reset de encendido llegan a todos los módulos, por lo que se indicaron con una nota en lugar de una flecha a cada uno. El paquete de configuración no aparece como bloque, porque solo contiene constantes y no genera hardware.
+
+Al revisar el diagrama contra \texttt{top.sv} se notó que la señal \texttt{tick\_display} salía de \texttt{clk\_enables} y no llegaba a ningún módulo. Se había planeado para refrescar displays multiplexados, pero la DE10-Standard tiene pines propios para cada HEX y el control del display quedó combinacional.
+
+\subsubsection*{Revisión y limpieza del código}
+
+Se revisaron todos los archivos de \texttt{src} buscando señales, constantes e importaciones sin uso. Se eliminaron \texttt{tick\_display}, las importaciones del paquete en cuatro módulos que no usan ninguna de sus constantes, y una serie de constantes del paquete que nadie usaba. Estas venían de la planificación inicial, cuando el paquete se escribió antes que los módulos. Durante la implementación cada módulo resolvió su parte de forma directa, por ejemplo con anchos fijos de 9 bits o con los códigos de caracteres escritos en el propio módulo, y esas constantes quedaron sin referencias.
+
+El filtro de entradas tenía operadores ternarios, que el enunciado prohíbe. Un compañero lo reescribió con máscaras, y en la revisión se simplificaron además unos términos que siempre valían cero. Para comprobar que el comportamiento no cambió, se simuló la versión nueva junto con la original durante 300\,000 ciclos con entradas aleatorias, y las salidas coincidieron en todos los ciclos.
+
+\subsubsection*{Velocidad normalizada y orden de los dígitos}
+
+El enunciado pide mostrar la velocidad normalizada de 0 a F. En el control del display se agregó un multiplexor por máscaras que convierte cada velocidad en el valor más cercano de la escala hexadecimal.
+
+\begin{align*}
+V_{HEX} &= \operatorname{round}\left(\frac{15 \cdot s}{7}\right) \\
+s = 1, 2, \ldots, 7 &\Rightarrow V_{HEX} = 2,\ 4,\ 6,\ 9,\ \text{B},\ \text{D},\ \text{F}
+\end{align*}
+
+También se movieron al control del display dos ajustes que estaban en el módulo superior. En el estado de validación ahora muestra la posición de la puerta, igual que en administración y prueba, y los dígitos del intento quedan en orden de lectura. Con esto el módulo superior le pasa el estado y la ventana directamente, sin lógica intermedia.
+
+\subsubsection*{Verificación de la limpieza}
+
+Los dieciséis bancos de prueba terminaron sin errores. Se actualizaron el del generador de habilitaciones y el del display, este último con la tabla de velocidades normalizadas, y se renombró el banco del decodificador de siete segmentos para que coincida con el nombre de su módulo. Además se simuló el sistema completo antes y después de la limpieza con los mismos estímulos, recorriendo los ocho estados, y las salidas fueron idénticas en todos los ciclos salvo en HEX5, que cambió por la normalización.
+
+En Quartus la compilación terminó sin errores, con 560 celdas lógicas y un margen de 10.85 ns en el peor caso de tiempos. El diseño usa seis celdas menos y tiene más margen que antes, lo que confirma que lo eliminado no cumplía ninguna función. Los cambios se integraron a \texttt{development} con un pull request, y en la propuesta de investigación se actualizaron los resultados de la síntesis y se marcaron como resueltos los pendientes del filtro de entradas y de la normalización del display.
 
 \end{document}
